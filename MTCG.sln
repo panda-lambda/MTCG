@@ -1,0 +1,27 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.7.34221.43
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MTCG", "servertesser\MTCG.csproj", "{C9F974C9-2794-49D0-A34A-2D9B63B62DE5}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "MTCG.Tests", "MTCG.Tests", "{333E35F0-4C4B-46E6-B48D-96BEAC8CFB7B}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{C9F974C9-2794-49D0-A34A-2D9B63B62DE5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C9F974C9-2794-49D0-A34A-2D9B63B62DE5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C9F974C9-2794-49D0-A34A-2D9B63B62DE5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C9F974C9-2794-49D0-A34A-2D9B63B62DE5}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {CEEBCDF8-F65C-407A-A79C-B74655079CA7}
+	EndGlobalSection
+EndGlobal
