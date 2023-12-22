@@ -20,6 +20,51 @@ namespace MTCG.Repositories
             _connectionFactory = connectionFactory;
 
         }
+        public UserCredentials GetUserByUsername(string username)
+        {
+            using (var connection = _connectionFactory.CreateConnection())
+            {
+                Console.WriteLine("im userrepo für die pw ");
+                try
+                {
+                    using (var cmd = connection.CreateCommand())
+                    {
+                        cmd.CommandText = "SELECT * FROM USERS WHERE NAME= :n";
+                        IDataParameter n = cmd.CreateParameter();
+                        n.ParameterName = ":n";
+                        n.Value = username;
+                        cmd.Parameters.Add(n);
+
+                        using (var reader = cmd.ExecuteReader())
+                        {
+                            if (reader.Read())
+                            {
+                                Guid id = reader.GetGuid(0);
+                                string name = reader.GetString(1);
+                                string password = reader.GetString(2);
+
+                                Console.WriteLine( "token in user repo "+ password);
+                                return new UserCredentials
+                                {
+                                    Id = id,
+                                    Username = name,
+                                    Password = password
+                                };
+                            }
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex.Message);
+                    Console.WriteLine("exception in userrepository getting hashed pw");
+                }
+                return null;
+
+            }
+        }
+
+
         public bool registerUser(UserCredentials userCredentials)
         {
             using (var connection = _connectionFactory.CreateConnection())
@@ -32,6 +77,8 @@ namespace MTCG.Repositories
 
                     using (var cmd = connection.CreateCommand())
                     {
+
+
                         cmd.CommandText = "CREATE TABLE IF NOT EXISTS USERS (id UUID PRIMARY KEY, name VARCHAR(255), password VARCHAR(255))";
                         cmd.ExecuteNonQuery();
 

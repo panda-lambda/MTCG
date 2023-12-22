@@ -21,6 +21,7 @@ namespace MTCG.Controller
         public void CreateUser(UserCredentials? userCredentials, HttpSvrEventArgs e)
         {
             Console.WriteLine(userCredentials.Username, userCredentials.Password);
+            Console.WriteLine("in ceate use usercontroller");
 
             try
 
@@ -28,23 +29,16 @@ namespace MTCG.Controller
                 if (userCredentials == null)
                 {
                     e.Reply((int)HttpCodes.BAD_REQUEST, "{\"msg\":\"User could not be created. No valid credentials\"}");
-
                 }
 
                 if (_userService.CreateUser(userCredentials.Username, userCredentials.Password))
                 {
                     e.Reply((int)HttpCodes.OK, "{\"msg\":\"User was created.\"}");
-
                 }
                 else
                 {
                     e.Reply((int)HttpCodes.INTERNAL_SERVER_ERROR, "{\"msg\":\"User could not be created. Something went wrong\"}");
-
-
                 }
-
-
-
             }
             catch (Exception)
             {

@@ -139,13 +139,42 @@ namespace MTCG.HttpServer
 
             try
             {
-                byte[] buf = Encoding.ASCII.GetBytes(data);
-                _Client.GetStream().Write(buf, 0, buf.Length);
+
+
+                //byte[] buf = Encoding.ASCII.GetBytes(data);
+
+
+                //_Client.GetStream().Write(buf, 0, buf.Length);
+                private void SendHttpResponse(TcpClient client, int statusCode, string statusDescription, string contentType, string responseBody)
+                {
+                    string statusLine = $"HTTP/1.1 {statusCode} {statusDescription}\r\n";
+                    string headers = $"Content-Type: {contentType}\r\n" +
+                                     $"Content-Length: {Encoding.UTF8.GetByteCount(responseBody)}\r\n\r\n";
+
+                    string fullResponse = statusLine + headers + responseBody;
+
+                    byte[] responseBytes = Encoding.UTF8.GetBytes(fullResponse);
+
+                    NetworkStream stream = client.GetStream();
+                    try
+                    {
+                        stream.Write(responseBytes, 0, responseBytes.Length);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Error sending response: {ex.Message}");
+                    }
+                }
+
+
+
+
             }
             catch (ObjectDisposedException)
             {
                 Console.WriteLine("client already disposed!");
             }
+            
 
 
 

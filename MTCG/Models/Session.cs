@@ -20,10 +20,10 @@ namespace MTCG.Models
         public DateTime CreatedAt { get; set; }
         public DateTime ExpiresAt { get; set; }
 
-        }
-
-
-
     }
 
+
+
 }
+
+

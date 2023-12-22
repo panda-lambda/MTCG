@@ -32,8 +32,11 @@ internal class Program
         serviceProvider = new ServiceCollection()
          .AddSingleton<IDatabaseConnectionFactory, DatabaseConnectionFactory>()
          .AddScoped<IUserRepository, UserRepository>()
-         .AddScoped<IUserService, UserService>()  // Register IUserService
+         .AddScoped<ISessionRepository, SessionRepository>()
+         .AddScoped<IUserService, UserService>()
+         .AddScoped<ISessionService, SessionService>()// Register IUserService
          .AddTransient<UserController>()
+         .AddTransient<SessionController>()
          .BuildServiceProvider();
 
 
@@ -93,15 +96,33 @@ internal class Program
 
                 userController?.CreateUser(userCredentials, e);
             }
-            if (e.Path.StartsWith("/session") && e.Method == "POST")
+            if (e.Path.StartsWith("/sessions") && e.Method == "POST")
             {
-                var userController = serviceProvider.GetService<SessionController>();
+                Console.WriteLine("process message richtung session");
+                UserCredentials? userCredentials = JsonSerializer.Deserialize<UserCredentials>(e.Payload);
+                if (userCredentials == null)
+                {
+                    Console.WriteLine("usercred null in sessions");
+                }
+
+
+                var sessionController = serviceProvider.GetService<SessionController>();
+
+                if (sessionController == null)
+                {
+                    Console.WriteLine("Session controller == null ");
+                }
+
+                Console.WriteLine("direkt vor authenticate mit");
+                Console.WriteLine(userCredentials.Username);
+                Console.WriteLine(userCredentials.Password);
+                sessionController?.AuthenticateAndCreateSession(userCredentials, e);
+
 
             }
 
 
         }
-        e.Reply(200, e.PlainMessage);
     }
 }
 

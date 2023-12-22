@@ -10,5 +10,7 @@ namespace MTCG.Repositories
     public interface IUserRepository
     {
         public bool registerUser(UserCredentials userCredentials);
+        public UserCredentials GetUserByUsername (string username);  
+
     }
 }

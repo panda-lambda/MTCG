@@ -5,13 +5,11 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace MTCG.Services
+namespace MTCG.Repositories
 {
-    public interface ISessionService
-
-
+    public interface ISessionRepository
     {
-        public string AuthenticateAndCreateSession(UserCredentials userCredentials);
+        public bool authenticateUser(UserCredentials userCredentials);
 
     }
 }
