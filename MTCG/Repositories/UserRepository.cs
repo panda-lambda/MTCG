@@ -24,7 +24,7 @@ namespace MTCG.Repositories
         {
             using (var connection = _connectionFactory.CreateConnection())
             {
-            
+
 
                 try
                 {
@@ -34,9 +34,50 @@ namespace MTCG.Repositories
                     {
                         cmd.CommandText = "CREATE TABLE IF NOT EXISTS USERS (id UUID PRIMARY KEY, name VARCHAR(255), password VARCHAR(255))";
                         cmd.ExecuteNonQuery();
-                        
+
 
                         cmd.Dispose();
+                    }
+
+
+                    using (var cmd = connection.CreateCommand())
+                    {
+
+
+                        cmd.CommandText = "SELECT COUNT(*) FROM USERS WHERE NAME = :n";
+                        IDataParameter p = cmd.CreateParameter();
+                        p.ParameterName = ":n";
+                        p.Value = userCredentials.Username;
+                        cmd.Parameters.Add(p);
+
+                        long count = (long)cmd.ExecuteScalar();
+                        Console.WriteLine($"Count: {count}");
+
+                        if (count > 0)
+                        {
+                            // User already exists
+                            Console.WriteLine($"User with the name {userCredentials.Username} already exists!");
+
+                            cmd.CommandText = "SELECT * FROM USERS";
+                            using (var reader = cmd.ExecuteReader())
+                            {
+                                while (reader.Read())
+                                {
+                                    Guid id = reader.GetGuid(0);
+                                    string name = reader.GetString(1);
+                                    string password = reader.GetString(2);
+
+                                    Console.WriteLine($"User ID: {id}, Name: {name}, Password: {password}");
+                                }
+                            }
+
+
+
+
+
+
+                            return false;
+                        }
                     }
 
 
@@ -69,6 +110,49 @@ namespace MTCG.Repositories
 
 
                     }
+
+                    //using (var cmd = connection.CreateCommand())
+                    //{
+                    //    cmd.CommandText = "SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'USERS')";
+                    //    bool tableExists = (bool)cmd.ExecuteScalar();
+
+                    //    if (tableExists)
+                    //    {
+                    //        Console.WriteLine("Table exists");
+                    //    }
+                    //    else
+                    //    {
+                    //        // Table does not exist
+                    //        // ...
+                    //        Console.WriteLine("Table exists");
+
+
+
+                    //    }
+                    //    cmd.Dispose();
+
+                    //}
+
+                    using (var cmd = connection.CreateCommand())
+                    {
+                        cmd.CommandText = "SELECT * FROM USERS";
+                        using (var reader = cmd.ExecuteReader())
+                        {
+                            while (reader.Read())
+                            {
+                                string idTemp = reader.GetString(0);
+                                Guid id = Guid.Parse(reader.GetString(1));
+                                string name = reader.GetString(1);
+                                string password = reader.GetString(2);
+
+                                Console.WriteLine($"User ID: {id}, Name: {name}, Password: {password}");
+                            }
+                        }
+                    }
+
+
+
+
                     return true;
                 }
                 catch (Exception e)

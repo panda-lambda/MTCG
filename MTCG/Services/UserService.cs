@@ -52,8 +52,10 @@ namespace MTCG.Services
             try
             {
                 UserCredentials userCredentials = new UserCredentials { Username = username, Password = hashedPassword };
-                _userRepository.registerUser(userCredentials);
-                return true; 
+                if (_userRepository.registerUser(userCredentials))
+                    return true;
+                else
+                    return false;
             }
             catch (Exception e)
             {
@@ -63,7 +65,7 @@ namespace MTCG.Services
                 return false;
             }
 
-            
+
         }
     }
 }

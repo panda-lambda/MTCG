@@ -36,7 +36,7 @@ internal class Program
          .AddTransient<UserController>()
          .BuildServiceProvider();
 
-      
+
 
 
         // Now you can use serviceProvider to get instances of your services
@@ -61,42 +61,46 @@ internal class Program
         Console.WriteLine(e.PlainMessage);
         Console.WriteLine($"Methode: {e.Method}");
         Console.WriteLine($"Pfad: {e.Path}");
+        if (e.Payload == null || e.Path == null || e.Method == null || e.Path == string.Empty || e.Method == string.Empty)
 
-        if (e.Path.StartsWith("/users/") && e.Method == "POST")
         {
-            Console.WriteLine("users/");
+            e.Reply((int)HttpCodes.BAD_REQUEST, "No data received!");
+
         }
-
-
-        if (e.Path.StartsWith("/users") && e.Method == "POST")
+        else
         {
-            var userController = serviceProvider.GetService<UserController>();
 
-            if (e.Payload != null)
+            if (e.Path.StartsWith("/users/") && e.Method == "POST")
             {
+                Console.WriteLine("users/");
+            }
 
-                Console.WriteLine("\nplain message: "+ e.PlainMessage);
+
+            if (e.Path.StartsWith("/users") && e.Method == "POST")
+            {
+                var userController = serviceProvider.GetService<UserController>();
+
+
+
+                Console.WriteLine("\nplain message: " + e.PlainMessage);
                 Console.WriteLine("plain message end \n");
 
 
                 Console.WriteLine("\npayload message: " + e.Payload);
                 Console.WriteLine("payload message end \n");
 
+                UserCredentials? userCredentials = JsonSerializer.Deserialize<UserCredentials>(e.Payload);
 
+                userController?.CreateUser(userCredentials, e);
+            }
+            if (e.Path.StartsWith("/session") && e.Method == "POST")
+            {
+                var userController = serviceProvider.GetService<SessionController>();
 
-
-                UserCredentials userCredentials = JsonSerializer.Deserialize<UserCredentials>(e.Payload);
-
-                //TODO: check if userCredentials is null
-                //TODO: check if userCredentials.Username is null
-                //TODO: check if userCredentials.Password is null
-                userController.CreateUser(userCredentials, e);
             }
 
 
         }
-
-
         e.Reply(200, e.PlainMessage);
     }
 }
