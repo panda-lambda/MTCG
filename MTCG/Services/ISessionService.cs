@@ -12,6 +12,7 @@ namespace MTCG.Services
 
     {
         public string AuthenticateAndCreateSession(UserCredentials userCredentials);
+        public bool ValidateToken(string token);
 
     }
 }

@@ -6,6 +6,7 @@ using System.Data;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static System.Collections.Specialized.BitVector32;
 
 namespace MTCG.Repositories
 {
@@ -23,40 +24,39 @@ namespace MTCG.Repositories
 
 
         {
-            using (var connection = _connectionFactory.CreateConnection())
+            using var connection = _connectionFactory.CreateConnection();
+
+            try
             {
 
-                try
+                using (var cmd = connection.CreateCommand())
                 {
 
-                    using (var cmd = connection.CreateCommand())
-                    {
-
-                        cmd.CommandText = "SELECT ID FROM USERS WHERE NAME = :n AND password =:p";
-                        IDataParameter p = cmd.CreateParameter();
-                        p.ParameterName = ":n";
-                        p.Value = userCredentials.Username;
-                        cmd.Parameters.Add(p);
+                    cmd.CommandText = "SELECT ID FROM USERS WHERE NAME = :n AND password =:p";
+                    IDataParameter p = cmd.CreateParameter();
+                    p.ParameterName = ":n";
+                    p.Value = userCredentials.Username;
+                    cmd.Parameters.Add(p);
 
 
-                        IDataParameter n = cmd.CreateParameter();
-                        n.ParameterName = ":n";
-                        n.Value = userCredentials.Password;
-                        cmd.Parameters.Add(n);
+                    IDataParameter n = cmd.CreateParameter();
+                    n.ParameterName = ":n";
+                    n.Value = userCredentials.Password;
+                    cmd.Parameters.Add(n);
 
-                        cmd.ExecuteNonQuery();
-                    }
+                    cmd.ExecuteNonQuery();
                 }
-                catch (Exception ex)
-                {
-                    Console.WriteLine("Exeption in SessionRepository:");
-
-                    Console.WriteLine(ex.Message);
-
-                }
-
-                return false;
             }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Exeption in SessionRepository:");
+
+                Console.WriteLine(ex.Message);
+
+            }
+            return false;
         }
+
+
     }
 }

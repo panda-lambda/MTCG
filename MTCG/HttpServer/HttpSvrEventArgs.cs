@@ -118,22 +118,22 @@ namespace MTCG.HttpServer
             switch (status)
             {
                 case 200:
-                    statusDescription = "HTTP/1.1 200 OK\n"; break;
+                    statusDescription = "HTTP/1.1 200 OK\r\n"; break;
                 case 400:
-                    statusDescription = "HTTP/1.1 400 Bad Request\n"; break;
+                    statusDescription = "HTTP/1.1 400 Bad Request\r\n"; break;
                 case 404:
-                    statusDescription = "HTTP/1.1 404 Not Found\n"; break;
+                    statusDescription = "HTTP/1.1 404 Not Found\r\n"; break;
                 case 500:
-                    statusDescription = "HTTP/1.1 500 Internal Server Error\n"; break;
+                    statusDescription = "HTTP/1.1 500 Internal Server Error\r\n"; break;
                 default:
-                    statusDescription = "HTTP/1.1 418 I'm a Teapot\n"; break; 
+                    statusDescription = "HTTP/1.1 418 I'm a Teapot\r\n"; break; 
             }
 
             if (!string.IsNullOrEmpty(payload)) { statusDescription += payload + "\n\r"; }
-
-            string statusLine = $"HTTP/1.1 {status} {statusDescription}\r\n";
+            int contentLength = string.IsNullOrEmpty(payload) ? 0 : Encoding.UTF8.GetByteCount(payload);
+            string statusLine = $"{statusDescription}\r\n";
             string headers = "Content-Type: application/json\r\n" +
-                             $"Content-Length: {{string.IsNullOrEmpty(payload)? 0 :Encoding.UTF8.GetByteCount(payload)}}\r\n";
+                             $"Content-Length: {contentLength}\r\n";
 
             string fullResponse = statusLine + headers;
 

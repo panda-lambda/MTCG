@@ -15,10 +15,10 @@ namespace MTCG.Models
         // public properties                                                                                                //
         //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         public Guid Id { get; set; }
-        public string Username { get; set; }
-        public string Token { get; set; }
-        public DateTime CreatedAt { get; set; }
-        public DateTime ExpiresAt { get; set; }
+        public string Username { get; set; } = string.Empty;
+        public string Token { get; set; } = string.Empty;
+        public long CreatedAt { get; set; }
+        public long ExpiresAt { get; set; }
 
     }
 

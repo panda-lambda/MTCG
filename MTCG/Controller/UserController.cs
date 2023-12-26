@@ -50,7 +50,7 @@ namespace MTCG.Controller
 
         internal void CreateUser(HttpSvrEventArgs e)
         {
-            Console.WriteLine("in ceate use usercontroller");
+            Console.WriteLine("in create use usercontroller");
             try
 
             {

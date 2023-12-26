@@ -23,7 +23,7 @@ internal class Program
     /// <summary>Main entry point.</summary>
     /// <param name="args">Arguments.</param>
     /// 
-    private static IServiceProvider serviceProvider;
+    private static IServiceProvider? serviceProvider;
     static void Main(string[] args)
 
 
@@ -74,7 +74,7 @@ internal class Program
         }
 
         Type? controllerType = DetermineControllerType(e.Path);
-        if (controllerType != null)
+        if (controllerType != null && serviceProvider !=null)
         {
             var controller = serviceProvider.GetService(controllerType) as BaseController;
             controller?.HandleRequest(e);
@@ -93,7 +93,7 @@ internal class Program
         {
             return typeof(UserController);
         }
-        else if (path.StartsWith("/sessions/"))
+        else if (path.StartsWith("/sessions"))
         {
             return typeof(SessionController);
         }

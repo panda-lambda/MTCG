@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace MTCG.Models
 {
-    public class BattleModel
+    public class Battle
     {
         /// <summary>This class provides the model for the battles.</summary>
 

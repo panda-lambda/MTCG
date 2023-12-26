@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace MTCG.Models
 {
-    public class PackageModel
+    public class Package
     {
         /// <summary>This class provides the model for a package.</summary>
         //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

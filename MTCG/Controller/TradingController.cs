@@ -26,26 +26,28 @@ namespace MTCG.Controller
                 case "POST":
                     if (e.Path.StartsWith("/tradings/"))
                     {
-                        //TradeSingleCard(e)
+                        TradeSingleCard(e);
                     }
 
                     if (e.Path.StartsWith("/tradings"))
                     {
-                        //CreateNewTrading(e)
+                        CreateNewTrading(e);
                     }
                     break;
+
                 case "DELETE":
                     {
                         if (e.Path.StartsWith("/tradings/"))
                         {
-                            //RemoveTradingDeal(e) 
+                            RemoveTradingDeal(e);
                         }
                         break;
                     }
+
                 case "GET":
                     if (e.Path.StartsWith("/tradings"))
                     {
-                        //GetAvailabeTradingDeals(e);
+                        GetAvailabeTradingDeals(e);
                     }
                     break;
                 default:
@@ -54,36 +56,37 @@ namespace MTCG.Controller
             }
         }
 
-        public void TradeSingleCard(HttpSvrEventArgs e)
+        internal void TradeSingleCard(HttpSvrEventArgs e)
         {
             e.Reply((int)HttpCodes.OK, "Trading deal successfully executed.");
             e.Reply((int)HttpCodes.UNAUTORIZED, "Access token is missing or invalid");
             e.Reply((int)HttpCodes.FORBIDDEN, "The offered card is not owned by the user, or the requirements are not met (Type, MinimumDamage), or the offered card is locked in the deck.");
             e.Reply((int)HttpCodes.NOT_FOUND, "The provided deal ID was not found.");
         }
-        public void CreateNewTrading(HttpSvrEventArgs e)
+        internal void CreateNewTrading(HttpSvrEventArgs e)
         {
             e.Reply((int)HttpCodes.OK, "Trading deal successfully created.");
             e.Reply((int)HttpCodes.UNAUTORIZED, "Access token is missing or invalid");
             e.Reply((int)HttpCodes.FORBIDDEN, "The deal contains a card that is not owned by the user or locked in the deck.");
             e.Reply((int)HttpCodes.CONFLICT, "A deal with this deal ID already exists.");
         }
-         public void RemoveTradingDeal(HttpSvrEventArgs e)
+        internal void RemoveTradingDeal(HttpSvrEventArgs e)
         {
             e.Reply((int)HttpCodes.OK, "Trading deal successfully deleted.");
             e.Reply((int)HttpCodes.UNAUTORIZED, "Access token is missing or invalid");
             e.Reply((int)HttpCodes.FORBIDDEN, "The deal contains a card that is not owned by the user.");
             e.Reply((int)HttpCodes.NOT_FOUND, "The provided deal ID was not found.");
             e.Reply((int)HttpCodes.CONFLICT, "A deal with this deal ID already exists.");
-        }  public void GetAvailabeTradingDeals(HttpSvrEventArgs e)
+        }
+        internal void GetAvailabeTradingDeals(HttpSvrEventArgs e)
         {
             e.Reply((int)HttpCodes.OK, "There are trading deals available, the response contains these");
-          //content:
-          //  application/json:
-          //    schema:
-          //      type: array
-          //      items:
-          //        $ref: '#/components/schemas/TradingDeal'");
+            //content:
+            //  application/json:
+            //    schema:
+            //      type: array
+            //      items:
+            //        $ref: '#/components/schemas/TradingDeal'");
             e.Reply((int)HttpCodes.NO_CONTENT, "The request was fine, but there are no trading deals available.");
             e.Reply((int)HttpCodes.UNAUTORIZED, "Access token is missing or invalid");
 
