@@ -113,73 +113,49 @@ namespace MTCG.HttpServer
         /// <param name="payload">Payload.</param>
         public virtual void Reply(int status, string? payload = null)
         {
-            string data;
+            string statusDescription;
 
             switch (status)
             {
                 case 200:
-                    data = "HTTP/1.1 200 OK\n"; break;
+                    statusDescription = "HTTP/1.1 200 OK\n"; break;
                 case 400:
-                    data = "HTTP/1.1 400 Bad Request\n"; break;
+                    statusDescription = "HTTP/1.1 400 Bad Request\n"; break;
                 case 404:
-                    data = "HTTP/1.1 404 Not Found\n"; break;
+                    statusDescription = "HTTP/1.1 404 Not Found\n"; break;
+                case 500:
+                    statusDescription = "HTTP/1.1 500 Internal Server Error\n"; break;
                 default:
-                    data = "HTTP/1.1 418 I'm a Teapot\n"; break;
+                    statusDescription = "HTTP/1.1 418 I'm a Teapot\n"; break; 
             }
 
-            if (string.IsNullOrEmpty(payload))
-            {
-                data += "Content-Length: 0\n";
-            }
-            data += "Content-Type: text/plain\n\n";
+            if (!string.IsNullOrEmpty(payload)) { statusDescription += payload + "\n\r"; }
 
-            if (!string.IsNullOrEmpty(payload)) { data += payload + "\n\r"; }
+            string statusLine = $"HTTP/1.1 {status} {statusDescription}\r\n";
+            string headers = "Content-Type: application/json\r\n" +
+                             $"Content-Length: {{string.IsNullOrEmpty(payload)? 0 :Encoding.UTF8.GetByteCount(payload)}}\r\n";
 
-            
+            string fullResponse = statusLine + headers;
 
+            byte[] responseBytes = Encoding.UTF8.GetBytes(fullResponse);
+
+            NetworkStream stream = _Client.GetStream();
             try
             {
-
-
-                //byte[] buf = Encoding.ASCII.GetBytes(data);
-
-
-                //_Client.GetStream().Write(buf, 0, buf.Length);
-                private void SendHttpResponse(TcpClient client, int statusCode, string statusDescription, string contentType, string responseBody)
-                {
-                    string statusLine = $"HTTP/1.1 {statusCode} {statusDescription}\r\n";
-                    string headers = $"Content-Type: {contentType}\r\n" +
-                                     $"Content-Length: {Encoding.UTF8.GetByteCount(responseBody)}\r\n\r\n";
-
-                    string fullResponse = statusLine + headers + responseBody;
-
-                    byte[] responseBytes = Encoding.UTF8.GetBytes(fullResponse);
-
-                    NetworkStream stream = client.GetStream();
-                    try
-                    {
-                        stream.Write(responseBytes, 0, responseBytes.Length);
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine($"Error sending response: {ex.Message}");
-                    }
-                }
-
-
-
-
+                stream.Write(responseBytes, 0, responseBytes.Length);
             }
             catch (ObjectDisposedException)
             {
                 Console.WriteLine("client already disposed!");
             }
-            
-
-
-
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error sending response: {ex.Message}");
+            }
             _Client.Close();
             _Client.Dispose();
         }
+
+
     }
 }

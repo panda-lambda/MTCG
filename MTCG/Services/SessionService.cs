@@ -31,11 +31,10 @@ namespace MTCG.Services
             }
 
             Console.WriteLine($"User {user.Username} with hased pw: {user.Password}");
-            //var token = GenerateJwtToken(user
+            //var token = GenerateJwtToken(user)..
             string token = "testtoken";
-            //store token in dictionary
-            // Optionally store session information if needed
-            // _sessionRepository.StoreSessionInfo(...);
+            //store token in threadsafe dictionary!!!
+            //and maybe some other infors?
 
             return token;
         }

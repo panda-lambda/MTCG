@@ -11,9 +11,8 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Text.Json;
-
-using Microsoft.Extensions.DependencyInjection;
 using MTCG.Services;
+
 internal class Program
 {
 
@@ -34,20 +33,19 @@ internal class Program
          .AddScoped<IUserRepository, UserRepository>()
          .AddScoped<ISessionRepository, SessionRepository>()
          .AddScoped<IUserService, UserService>()
-         .AddScoped<ISessionService, SessionService>()// Register IUserService
+         .AddScoped<ISessionService, SessionService>()
+         .AddScoped<IPackageService, PackageService>()
+         .AddScoped<ICardService, CardService>()
+         .AddScoped<ITradingService, TradingService>()
          .AddTransient<UserController>()
          .AddTransient<SessionController>()
+         .AddTransient<PackageController>()
+         .AddTransient<CardController>()
+         .AddTransient<TradingController>()
          .BuildServiceProvider();
 
-
-
-
-        // Now you can use serviceProvider to get instances of your services
-        var userRepository = serviceProvider.GetService<IUserRepository>();
-
-
         HttpSvr svr = new();
-        svr.Incoming += _ProcessMesage;
+        svr.Incoming += HandleRequest;
 
         svr.Run();
 
@@ -59,71 +57,65 @@ internal class Program
     /// <summary>Event handler for incoming server requests.</summary>
     /// <param name="sender">Sender.</param>
     /// <param name="e">Event arguments.</param>
-    private static void _ProcessMesage(object sender, HttpSvrEventArgs e)
+    private static void HandleRequest(object sender, HttpSvrEventArgs e)
     {
+
+
+        Console.WriteLine("Sender: " + e.PlainMessage);
         Console.WriteLine(e.PlainMessage);
         Console.WriteLine($"Methode: {e.Method}");
         Console.WriteLine($"Pfad: {e.Path}");
-        if (e.Payload == null || e.Path == null || e.Method == null || e.Path == string.Empty || e.Method == string.Empty)
 
+
+        if (e.Payload == null || e.Path == null || e.Method == null || e.Path == string.Empty || e.Method == string.Empty)
         {
             e.Reply((int)HttpCodes.BAD_REQUEST, "No data received!");
+            return;
+        }
 
+        Type? controllerType = DetermineControllerType(e.Path);
+        if (controllerType != null)
+        {
+            var controller = serviceProvider.GetService(controllerType) as BaseController;
+            controller?.HandleRequest(e);
         }
         else
-        {
+            e.Reply((int)HttpCodes.BAD_REQUEST, "Bad request!");
 
-            if (e.Path.StartsWith("/users/") && e.Method == "POST")
-            {
-                Console.WriteLine("users/");
-            }
-
-
-            if (e.Path.StartsWith("/users") && e.Method == "POST")
-            {
-                var userController = serviceProvider.GetService<UserController>();
-
-
-
-                Console.WriteLine("\nplain message: " + e.PlainMessage);
-                Console.WriteLine("plain message end \n");
-
-
-                Console.WriteLine("\npayload message: " + e.Payload);
-                Console.WriteLine("payload message end \n");
-
-                UserCredentials? userCredentials = JsonSerializer.Deserialize<UserCredentials>(e.Payload);
-
-                userController?.CreateUser(userCredentials, e);
-            }
-            if (e.Path.StartsWith("/sessions") && e.Method == "POST")
-            {
-                Console.WriteLine("process message richtung session");
-                UserCredentials? userCredentials = JsonSerializer.Deserialize<UserCredentials>(e.Payload);
-                if (userCredentials == null)
-                {
-                    Console.WriteLine("usercred null in sessions");
-                }
-
-
-                var sessionController = serviceProvider.GetService<SessionController>();
-
-                if (sessionController == null)
-                {
-                    Console.WriteLine("Session controller == null ");
-                }
-
-                Console.WriteLine("direkt vor authenticate mit");
-                Console.WriteLine(userCredentials.Username);
-                Console.WriteLine(userCredentials.Password);
-                sessionController?.AuthenticateAndCreateSession(userCredentials, e);
-
-
-            }
-
-
-        }
     }
+
+    /// <summary>Handler for picking the correct controller</summary>
+    /// <param name="path">Http Path</param>
+
+    private static Type? DetermineControllerType(string path)
+    {
+        if (path.StartsWith("/user"))
+        {
+            return typeof(UserController);
+        }
+        else if (path.StartsWith("/sessions/"))
+        {
+            return typeof(SessionController);
+        }
+        else if (path.StartsWith("/cards"))
+        {
+            return typeof(CardController);
+        }
+        else if (path.StartsWith("/packages") || path.StartsWith("/transactions/"))
+        {
+            return typeof(PackageController);
+        }
+
+
+
+        return null;
+
+    }
+
+
+
+
+
 }
 
 

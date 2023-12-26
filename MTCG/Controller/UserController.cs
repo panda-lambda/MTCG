@@ -5,11 +5,12 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace MTCG.Controller
 {
-    public class UserController
+    public class UserController : BaseController
     {
         private IUserService _userService;
 
@@ -18,17 +19,48 @@ namespace MTCG.Controller
             _userService = userService ?? throw new ArgumentNullException(nameof(userService));
         }
 
-        public void CreateUser(UserCredentials? userCredentials, HttpSvrEventArgs e)
-        {
-            Console.WriteLine(userCredentials.Username, userCredentials.Password);
-            Console.WriteLine("in ceate use usercontroller");
 
+        public override void HandleRequest(HttpSvrEventArgs e)
+        {
+            switch (e.Method)
+            {
+                case "POST":
+                    if (e.Path.StartsWith("/users"))
+                        CreateUser(e);
+                    break;
+                case "PUT":
+                    if (e.Path.StartsWith("/users/"))
+                    {
+                        // UpdateUserData(e);
+                    }
+                    break;
+                case "GET":
+                    if (e.Path.StartsWith("/users/"))
+                    {
+                        //GetUserData(e);
+                    }
+                        break;
+                default:
+                    e.Reply((int)HttpCodes.BAD_REQUEST, "{\"msg\":\"Not a valid Http Request!\"}");
+                    break;
+            }
+        }
+
+
+
+        internal void CreateUser(HttpSvrEventArgs e)
+        {
+            Console.WriteLine("in ceate use usercontroller");
             try
 
             {
+
+                UserCredentials? userCredentials = JsonSerializer.Deserialize<UserCredentials>(e.Payload);
+
                 if (userCredentials == null)
                 {
                     e.Reply((int)HttpCodes.BAD_REQUEST, "{\"msg\":\"User could not be created. No valid credentials\"}");
+                    return;
                 }
 
                 if (_userService.CreateUser(userCredentials.Username, userCredentials.Password))

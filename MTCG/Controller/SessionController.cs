@@ -5,11 +5,12 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace MTCG.Controller
 {
-    public class SessionController
+    public class SessionController : BaseController
     {
         private ISessionService _sessionService;
         public SessionController(ISessionService sessionService)
@@ -17,28 +18,37 @@ namespace MTCG.Controller
             _sessionService = sessionService ?? throw new ArgumentNullException(nameof(sessionService));
         }
 
-        public void AuthenticateAndCreateSession(UserCredentials? userCredentials, HttpSvrEventArgs e)
+
+        public override void HandleRequest(HttpSvrEventArgs e)
+        {
+            AuthenticateAndCreateSession(e);
+        }
+
+        public void AuthenticateAndCreateSession(HttpSvrEventArgs e)
         {
             Console.WriteLine("in controller authenticate");
-
-            try
+            UserCredentials? userCredentials = JsonSerializer.Deserialize<UserCredentials>(e.Payload);
+            if (userCredentials == null)
             {
-                string token = _sessionService.AuthenticateAndCreateSession(userCredentials);
-                Console.WriteLine("got token back in sessionscontroller" + token);
-                if (!(string.IsNullOrEmpty(token)))
+                try
                 {
-                    string response = "{\"msg\":\"User was logged in with token: " + token + "\"}";
-                    e.Reply((int)HttpCodes.OK, response);
+                    string token = _sessionService.AuthenticateAndCreateSession(userCredentials);
+                    Console.WriteLine("got token back in sessionscontroller" + token);
+                    if (!(string.IsNullOrEmpty(token)))
+                    {
+                        string response = "{\"msg\":\"User was logged in with token: " + token + "\"}";
+                        e.Reply((int)HttpCodes.OK, response);
+                    }
+                    else
+                    {
+                        e.Reply((int)HttpCodes.UNAUTORIZED, "{\"msg\":\"Access token is missing or invalid\"}");
+                    }
                 }
-                else
+                catch (Exception ex)
                 {
-                    e.Reply((int)HttpCodes.INTERNAL_SERVER_ERROR, "{\"msg\":\"User could not logged in. Something went wrong\"}");
+                    Console.WriteLine(ex.Message);
+                    e.Reply((int)HttpCodes.BAD_REQUEST, "{\"msg\":\"User could not be logged ig - got exception.\"}");
                 }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex.Message);
-                e.Reply((int)HttpCodes.BAD_REQUEST, "{\"msg\":\"User could not be logged ig - got exception.\"}");
             }
         }
     }

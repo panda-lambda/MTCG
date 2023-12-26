@@ -4,9 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace MTCG.Controller
+namespace MTCG.Services
 {
-    public class BattleController
+    public class TradingService : ITradingService
     {
     }
 }
