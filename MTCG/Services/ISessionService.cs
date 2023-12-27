@@ -1,4 +1,5 @@
-﻿using MTCG.Models;
+﻿using MTCG.HttpServer;
+using MTCG.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,7 +13,7 @@ namespace MTCG.Services
 
     {
         public string AuthenticateAndCreateSession(UserCredentials userCredentials);
-        public bool ValidateToken(string token);
-
+       
+        public UserSession? AuthenticateUserAndSession(HttpSvrEventArgs e);
     }
 }

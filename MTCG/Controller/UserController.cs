@@ -37,7 +37,7 @@ namespace MTCG.Controller
                 case "GET":
                     if (e.Path.StartsWith("/users/"))
                     {
-                        //GetUserData(e);
+                        GetUserData(e);
                     }
                         break;
                 default:
@@ -79,6 +79,15 @@ namespace MTCG.Controller
             }
 
             return;
+        }
+
+        internal void GetUserData(HttpSvrEventArgs e)
+        {
+            
+            string username = e.Path.Replace("/users/", "");
+            Console.WriteLine("username "+username );
+            e.Reply((int)HttpCodes.OK, "{\"msg\":\"User exists.\"}");
+            return; 
         }
 
 

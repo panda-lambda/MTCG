@@ -7,9 +7,8 @@ using System.Threading.Tasks;
 
 namespace MTCG.Repositories
 {
-    public interface ISessionRepository
+    public interface IPackageAndCardRepository
     {
-       
-
+        public bool AddPackage(Package package);
     }
 }

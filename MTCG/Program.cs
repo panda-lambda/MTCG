@@ -32,16 +32,16 @@ internal class Program
          .AddSingleton<IDatabaseConnectionFactory, DatabaseConnectionFactory>()
          .AddScoped<IUserRepository, UserRepository>()
          .AddScoped<ISessionRepository, SessionRepository>()
+         .AddScoped<IPackageAndCardRepository, PackageAndCardRepository>()
          .AddScoped<IUserService, UserService>()
          .AddScoped<ISessionService, SessionService>()
-         .AddScoped<IPackageService, PackageService>()
+         .AddScoped<IPackageAndCardService, PackageAndCardService>()
          .AddScoped<ICardService, CardService>()
          .AddScoped<ITradingService, TradingService>()
          .AddTransient<UserController>()
          .AddTransient<SessionController>()
-         .AddTransient<PackageController>()
+         .AddTransient<PackageAndCardController>()
          .AddTransient<CardController>()
-         .AddTransient<TradingController>()
          .BuildServiceProvider();
 
         HttpSvr svr = new();
@@ -61,8 +61,13 @@ internal class Program
     {
 
 
-        Console.WriteLine("Sender: " + e.PlainMessage);
-        Console.WriteLine(e.PlainMessage);
+        Console.WriteLine("Message: " + e.PlainMessage);
+        Console.WriteLine(   "Header:\n"   );
+        foreach (var header in e.Headers)
+        {
+            Console.WriteLine(header.Name + " : header.Value");
+        }
+       
         Console.WriteLine($"Methode: {e.Method}");
         Console.WriteLine($"Pfad: {e.Path}");
 
@@ -103,7 +108,7 @@ internal class Program
         }
         else if (path.StartsWith("/packages") || path.StartsWith("/transactions/"))
         {
-            return typeof(PackageController);
+            return typeof(PackageAndCardController);
         }
 
 

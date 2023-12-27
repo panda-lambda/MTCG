@@ -54,7 +54,7 @@ namespace MTCG.Services
             {
                 Console.WriteLine("e:");
                 Console.WriteLine(e);
-                Console.WriteLine("Soemthing went wrong in the service");
+                Console.WriteLine("Something went wrong in the service");
                 return false;
             }
         }

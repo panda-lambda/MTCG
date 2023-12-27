@@ -59,7 +59,7 @@ namespace MTCG.HttpServer
             }
 
             Headers = headers.ToArray();
-            Console.WriteLine("Die header: " + Headers);
+
         }
 
 
@@ -114,46 +114,68 @@ namespace MTCG.HttpServer
         public virtual void Reply(int status, string? payload = null)
         {
             string statusDescription;
+            Console.WriteLine("in repyl with" + status);
+            Console.WriteLine("with payload:" + payload);
 
             switch (status)
             {
                 case 200:
                     statusDescription = "HTTP/1.1 200 OK\r\n"; break;
+                case 201:
+                    statusDescription = "HTTP/1.1 201 Created\r\n"; break;
+                case 204:
+                    statusDescription = "HTTP/1.1 204 No Content\r\n"; break;
                 case 400:
                     statusDescription = "HTTP/1.1 400 Bad Request\r\n"; break;
+                case 401:
+                    statusDescription = "HTTP/1.1 401 Unauthorized\r\n"; break;
+                case 403:
+                    statusDescription = "HTTP/1.1 403 Forbidden\r\n"; break;
                 case 404:
                     statusDescription = "HTTP/1.1 404 Not Found\r\n"; break;
+                case 405:
+                    statusDescription = "HTTP/1.1 405 Method Not Allowed\r\n"; break;
+                case 409:
+                    statusDescription = "HTTP/1.1 409 Conflict\r\n"; break;
                 case 500:
                     statusDescription = "HTTP/1.1 500 Internal Server Error\r\n"; break;
                 default:
-                    statusDescription = "HTTP/1.1 418 I'm a Teapot\r\n"; break; 
+                    statusDescription = "HTTP/1.1 418 I'm a Teapot\r\n"; break;
             }
 
-            if (!string.IsNullOrEmpty(payload)) { statusDescription += payload + "\n\r"; }
-            int contentLength = string.IsNullOrEmpty(payload) ? 0 : Encoding.UTF8.GetByteCount(payload);
-            string statusLine = $"{statusDescription}\r\n";
-            string headers = "Content-Type: application/json\r\n" +
-                             $"Content-Length: {contentLength}\r\n";
+            string headers = "Content-Type: application/json\r\n";
+            if (!string.IsNullOrEmpty(payload))
+            {
+                int contentLength = Encoding.UTF8.GetByteCount(payload);
+                headers += $"Content-Length: {contentLength}\r\n";
+            }
 
-            string fullResponse = statusLine + headers;
+            string fullResponse = statusDescription + headers + "\r\n" + payload;
 
-            byte[] responseBytes = Encoding.UTF8.GetBytes(fullResponse);
+            Console.WriteLine("Full response: " + fullResponse + "\n\n\n------");
 
-            NetworkStream stream = _Client.GetStream();
             try
             {
-                stream.Write(responseBytes, 0, responseBytes.Length);
+                byte[] responseBytes = Encoding.UTF8.GetBytes(fullResponse);
+                NetworkStream stream = _Client.GetStream();
+                 stream.Write(responseBytes, 0, responseBytes.Length);
+                stream.Flush(); 
             }
             catch (ObjectDisposedException)
             {
-                Console.WriteLine("client already disposed!");
+                Console.WriteLine("Client already disposed!");
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Error sending response: {ex.Message}");
             }
-            _Client.Close();
-            _Client.Dispose();
+            finally
+            {
+                _Client.Close();
+                _Client.Dispose();
+            }
+
+
         }
 
 

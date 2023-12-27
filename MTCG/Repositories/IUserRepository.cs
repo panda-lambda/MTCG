@@ -10,7 +10,12 @@ namespace MTCG.Repositories
     public interface IUserRepository
     {
         public bool registerUser(UserCredentials userCredentials);
-        public UserCredentials? GetUserByUsername (string username);  
+        public UserCredentials? GetHashByUsername (string username);
+        public Guid? GetGuidByUserName(string userName);
+
+        public int? GetCoinsByUser(string username);
+
+        public bool SetCoinsByUser(string username, int amount);
 
     }
 }

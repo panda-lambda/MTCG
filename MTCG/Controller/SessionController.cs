@@ -37,17 +37,14 @@ namespace MTCG.Controller
                 try
                 {
                     string token = _sessionService.AuthenticateAndCreateSession(userCredentials);
-
-
                     Console.WriteLine("got token back in sessionscontroller:  \n" + token);
                     if (!(string.IsNullOrEmpty(token)))
                     {
                         e.Reply((int)HttpCodes.OK, $"{{ \"token\": \"{token}\" }}");
-                       
                     }
                     else
                     {
-                        e.Reply((int)HttpCodes.UNAUTORIZED, "{\"description\":\"Invalid username/password provided.\"}");
+                        e.Reply((int)HttpCodes.UNAUTORIZED, "{\"description\":\"Access token is missing or invalid\"}");
                     }
                 }
                 catch (Exception ex)

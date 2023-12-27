@@ -14,9 +14,12 @@ namespace MTCG.Models
         //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         // public properties                                                                                                //
         //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        public Guid Id { get; set; }
         public string? Name { get; set; }
         public string? Bio { get; set; }
         public string? Image { get; set; }
+
+        public int Coins { get; set; } = 20;
     }
 
 }

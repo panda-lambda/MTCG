@@ -4,9 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace MTCG.Services
+namespace MTCG.Controller
 {
-    public class PackageService : IPackageService
+    internal class Helper
     {
     }
 }

@@ -26,7 +26,7 @@ namespace MTCG.Controller
             {
 
                 e.Reply((int)HttpCodes.OK, "the battle log");
-                e.Reply((int)HttpCodes.UNAUTORIZED, "Access token is missing or invalid");
+                e.Reply((int)HttpCodes.UNAUTORIZED, "{\"description\":\"Access token is missing or invalid\"}");
 
             }
         }
@@ -42,7 +42,7 @@ namespace MTCG.Controller
         //    application / json:
         //      schema:
         //        $ref: '#/components/schemas/UserStats'
-            e.Reply((int)HttpCodes.UNAUTORIZED, "Access token is missing or invalid");
+            e.Reply((int)HttpCodes.UNAUTORIZED, "{\"description\":\"Access token is missing or invalid\"}");
 
         }
         private void GetSortedStatsByELO(HttpSvrEventArgs e)
