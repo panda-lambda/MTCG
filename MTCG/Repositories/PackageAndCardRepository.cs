@@ -178,5 +178,139 @@ namespace MTCG.Repositories
 
             return false;
         }
+
+        public List<Card>? BuyPackage(Guid userId)
+        {
+            using (var connection = _connectionFactory.CreateConnection())
+            {
+                using (var transaction = connection.BeginTransaction())
+                {
+                    try
+                    {
+                        var cardIds = new List<Guid>();
+                        Guid? packageId = null;
+                        using (var cmd = connection.CreateCommand())
+                        {
+                            cmd.CommandText = $"SELECT Id, CardId1, CardId2, CardId3, CardId4, CardId5 FROM Packages LIMIT 1";
+                            using (var reader = cmd.ExecuteReader())
+                            {
+                                if (reader.Read())
+                                {
+                                    packageId = reader.GetGuid(0);
+
+                                    for (int i = 1; i <= 5; i++)
+                                    {
+                                        if (!reader.IsDBNull(i))
+                                        {
+                                            cardIds.Add(reader.GetGuid(i));
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        if (cardIds.Count != 5 || packageId == null)
+                        {
+                            Console.WriteLine("card count <5 or no package id");
+                            return null;
+                        }
+
+                        foreach (var cardId in cardIds)
+                        {
+                            using (var cmda = connection.CreateCommand())
+                            {
+                                cmda.CommandText = $"UPDATE Cards SET OwnerId = :userId WHERE Id = :cardId";
+
+                                IDataParameter q = cmda.CreateParameter();
+                                q.ParameterName = ":userId";
+                                q.Value = packageId;
+                                cmda.Parameters.Add(q);
+
+                                IDataParameter k = cmda.CreateParameter();
+                                k.ParameterName = ":cardId";
+                                k.Value = packageId;
+                                cmda.Parameters.Add(k);
+                                cmda.ExecuteNonQuery();
+
+                            }
+                        }
+
+                        List<Card> cardList = new List<Card>();
+                        using (var cmd = connection.CreateCommand())
+                        {
+                            cmd.CommandText = "SELECT Id, Name, Damage FROM Cards WHERE OwnerId = :userId";
+
+                            var userIdParam = cmd.CreateParameter();
+                            userIdParam.ParameterName = ":userId";
+                            userIdParam.Value = userId;
+                            cmd.Parameters.Add(userIdParam);
+
+                            using (var reader = cmd.ExecuteReader())
+                            {
+                                while (reader.Read())
+                                {
+                                    Card card = new();
+
+
+                                    card.Id = reader.GetGuid(0);
+                                    if (Enum.TryParse<FactionType>(reader.GetString(1), out FactionType type))
+                                    {
+                                        card.Name = type;
+                                    }
+                                    else
+                                    {
+                                        Console.WriteLine("could not convert factiontype to enum");
+                                        return null;
+                                    }
+                                    card.Damage = reader.GetFloat(2);
+                                    if (Enum.TryParse<CardType>(reader.GetString(3), out CardType cardType))
+                                    {
+                                        card.Type = cardType;
+                                    }
+                                    else
+                                    {
+                                        Console.WriteLine("could not convert cardtype to enum");
+
+                                        return null;
+                                    }
+                                    card.Description = reader.GetString(4);
+                                    if (Enum.TryParse<ElementType>(reader.GetString(5), out ElementType elType))
+                                    {
+                                        card.Element = elType;
+                                    }
+                                    else
+                                    {
+                                        Console.WriteLine("could not convert elementtype to enum");
+
+                                        return null;
+                                    }
+                                    cardList.Add(card);
+                                }
+                            }
+                        }
+
+
+                        using (var cmdb = connection.CreateCommand())
+                        {
+                            cmdb.CommandText = $"DELETE FROM Packages WHERE Id = :packageId";
+                            IDataParameter p = cmdb.CreateParameter();
+                            p.ParameterName = ":packageId";
+                            p.Value = packageId;
+                            cmdb.Parameters.Add(p);
+                            cmdb.ExecuteNonQuery();
+                        }
+
+                        transaction.Commit();
+                        return cardList;
+                    }
+                    catch (Exception ex)
+                    {
+                        transaction.Rollback();
+                        Console.WriteLine(ex.Message);
+                        return null;
+                    }
+                }
+            }
+        }
+
     }
 }

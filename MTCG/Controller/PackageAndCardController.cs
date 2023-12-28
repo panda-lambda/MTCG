@@ -65,6 +65,8 @@ namespace MTCG.Controller
         }
         public void BuyCardPackage(HttpSvrEventArgs e)
         {
+
+
             //                    e.Reply((int)HttpCodes.BAD_REQUEST, "{\"description\":\"User could not be logged in - got exception.\"}");
 
             e.Reply((int)HttpCodes.OK, "{\"description\":\"A package has been successfully bought.\"}");

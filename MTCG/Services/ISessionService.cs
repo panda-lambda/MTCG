@@ -14,6 +14,6 @@ namespace MTCG.Services
     {
         public string AuthenticateAndCreateSession(UserCredentials userCredentials);
        
-        public UserSession? AuthenticateUserAndSession(HttpSvrEventArgs e);
+        public UserSession? AuthenticateUserAndSession(HttpSvrEventArgs e, string? username);
     }
 }

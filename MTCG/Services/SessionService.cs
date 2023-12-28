@@ -28,7 +28,7 @@ namespace MTCG.Services
             _sessions = new ConcurrentDictionary<Guid, UserSession>();
             _userService = (UserService)userService;
         }
-        public UserSession? AuthenticateUserAndSession(HttpSvrEventArgs e)
+        public UserSession? AuthenticateUserAndSession(HttpSvrEventArgs e, string? username)
         {
             string? token = e.Headers?.FirstOrDefault(header => header.Name == "Authorization")?.Value;
             if (token == null)
@@ -47,6 +47,13 @@ namespace MTCG.Services
             UserSession? session = GetSession((Guid)userId);
             if (session != null && userId!= null) {
                 Console.WriteLine("session guid with name : "+ _sessions[(Guid)userId].Username);
+            }
+            if (username!=  null)
+            {
+                if (_sessions[(Guid)userId].Username != username)
+                {
+
+                }
             }
             Console.WriteLine();
             return GetSession((Guid)userId);

@@ -2,6 +2,7 @@
 using MTCG.Models;
 using MTCG.Repositories;
 using Newtonsoft.Json;
+using Npgsql.NameTranslation;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -21,6 +22,30 @@ namespace MTCG.Services
             _packageAndCardRepository = packageAndCardRepository ?? throw new ArgumentNullException(nameof(packageAndCardRepository));
 
         }
+
+        public List<Card>? BuyPackage(HttpSvrEventArgs e) {
+
+
+            string? token = e.Headers?.FirstOrDefault(header => header.Name == "Authorization")?.Value;
+            string userName = string.Empty;
+            if ("-mtcgToken" == token?.Substring(token.Length - 10))
+            {
+                token = token.Replace("-mtcgToken", "");
+                userName = token.Replace("Bearer ", "");
+                Console.WriteLine("username in createpackage: " + userName);
+            }
+
+            if (userName != "admin")
+                return "admin";
+            if (_sessionService.AuthenticateUserAndSession(e, null) == null)
+            {
+                Console.WriteLine("no autorization n service!!!!");
+                return "token";
+            }
+
+
+            return null;
+        }
         public string CreateNewPackage(HttpSvrEventArgs e)
         {
             Console.WriteLine(" in createnewpackage service");
@@ -35,7 +60,7 @@ namespace MTCG.Services
 
             if (userName != "admin")
                 return "admin";
-            if (_sessionService.AuthenticateUserAndSession(e) == null )
+            if (_sessionService.AuthenticateUserAndSession(e, null) == null )
             {
                 Console.WriteLine("no autorization n service!!!!");
                 return "token";
