@@ -10,5 +10,6 @@ namespace MTCG.Repositories
     public interface IPackageAndCardRepository
     {
         public bool AddPackage(Package package);
+        public List<Card>? BuyPackage(Guid userId);
     }
 }

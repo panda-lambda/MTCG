@@ -1,5 +1,6 @@
 ﻿using MTCG.Data;
 using MTCG.Models;
+using MTCG.Utilities;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -39,9 +40,11 @@ namespace MTCG.Repositories
                         " Description VARCHAR(350)," +
                         " Element VARCHAR(50)   ," +
                         "OwnerId UUID REFERENCES Users(Id))";
-                    cmd.ExecuteNonQuery(); //(id UUID PRIMARY KEY, name VARCHAR(255), password VARCHAR(255))
+                    cmd.ExecuteNonQuery();
                     cmd.Dispose();
                     Console.WriteLine("nach create cards");
+
+
                 }
 
                 using (var cmd = connection.CreateCommand())
@@ -187,11 +190,53 @@ namespace MTCG.Repositories
                 {
                     try
                     {
+                        Int32 coinCount = 0;
+                        using (var cmd = connection.CreateCommand())
+                        {
+                            cmd.CommandText = $"SELECT COINS FROM USERDATA WHERE Id = :uid";
+                            IDataParameter userIdParam = cmd.CreateParameter();
+                            userIdParam.ParameterName = ":uid";
+                            userIdParam.Value = userId;
+                            cmd.Parameters.Add(userIdParam);
+
+                            using (var reader = cmd.ExecuteReader())
+                            {
+                                
+                                if (reader.Read())
+                                {
+                                    coinCount = reader.GetInt32(0);
+                                }
+                                if (coinCount < 5)
+                                {
+                                    throw new InsufficientCoinsException("not enough coins!");
+                                }
+                            }
+                        }
+
+                        using (var cmda = connection.CreateCommand())
+                        {
+                            cmda.CommandText = $"UPDATE UserData SET Coins = :coins WHERE Id = :userId";
+
+                            IDataParameter q = cmda.CreateParameter();
+                            q.ParameterName = ":coins";
+                            q.Value = coinCount - 5;
+                            cmda.Parameters.Add(q);
+
+                            IDataParameter k = cmda.CreateParameter();
+                            k.ParameterName = ":userId";
+                            k.Value = userId;
+                            cmda.Parameters.Add(k);
+                            cmda.ExecuteNonQuery();
+
+                        }
+
+
+
                         var cardIds = new List<Guid>();
                         Guid? packageId = null;
                         using (var cmd = connection.CreateCommand())
                         {
-                            cmd.CommandText = $"SELECT Id, CardId1, CardId2, CardId3, CardId4, CardId5 FROM Packages LIMIT 1";
+                            cmd.CommandText = $"SELECT Id, CardId1, CardId2, CardId3, CardId4, CardId5 FROM Package LIMIT 1";
                             using (var reader = cmd.ExecuteReader())
                             {
                                 if (reader.Read())
@@ -210,8 +255,8 @@ namespace MTCG.Repositories
                         }
                         if (cardIds.Count != 5 || packageId == null)
                         {
-                            Console.WriteLine("card count <5 or no package id");
-                            return null;
+                            Console.WriteLine("card1 " + cardIds[1]);
+                            throw new NoAvailableCardsException("No cards avail or no package found!");
                         }
 
                         foreach (var cardId in cardIds)
@@ -222,12 +267,12 @@ namespace MTCG.Repositories
 
                                 IDataParameter q = cmda.CreateParameter();
                                 q.ParameterName = ":userId";
-                                q.Value = packageId;
+                                q.Value = userId;
                                 cmda.Parameters.Add(q);
 
                                 IDataParameter k = cmda.CreateParameter();
                                 k.ParameterName = ":cardId";
-                                k.Value = packageId;
+                                k.Value = cardId;
                                 cmda.Parameters.Add(k);
                                 cmda.ExecuteNonQuery();
 
@@ -235,21 +280,32 @@ namespace MTCG.Repositories
                         }
 
                         List<Card> cardList = new List<Card>();
+
+
+
+
                         using (var cmd = connection.CreateCommand())
                         {
-                            cmd.CommandText = "SELECT Id, Name, Damage FROM Cards WHERE OwnerId = :userId";
+                            cmd.CommandText = "SELECT Id, Name, Damage, Type, Description, Element FROM Cards WHERE Id IN (";
 
-                            var userIdParam = cmd.CreateParameter();
-                            userIdParam.ParameterName = ":userId";
-                            userIdParam.Value = userId;
-                            cmd.Parameters.Add(userIdParam);
+                            for (int i = 0; i < 5; i++)
+                            {
+                                string paramName = "@id" + i;
+                                cmd.CommandText += paramName + (i < 5 - 1 ? ", " : "");
+
+                                var param = cmd.CreateParameter();
+                                param.ParameterName = paramName;
+                                param.Value = cardIds[i];
+                                cmd.Parameters.Add(param);
+                            }
+
+                            cmd.CommandText += ")";
 
                             using (var reader = cmd.ExecuteReader())
                             {
                                 while (reader.Read())
                                 {
-                                    Card card = new();
-
+                                    Card card = new Card();
 
                                     card.Id = reader.GetGuid(0);
                                     if (Enum.TryParse<FactionType>(reader.GetString(1), out FactionType type))
@@ -258,8 +314,7 @@ namespace MTCG.Repositories
                                     }
                                     else
                                     {
-                                        Console.WriteLine("could not convert factiontype to enum");
-                                        return null;
+                                        throw new InternalServerErrorException("could not convert factiontype to enum");
                                     }
                                     card.Damage = reader.GetFloat(2);
                                     if (Enum.TryParse<CardType>(reader.GetString(3), out CardType cardType))
@@ -268,20 +323,19 @@ namespace MTCG.Repositories
                                     }
                                     else
                                     {
-                                        Console.WriteLine("could not convert cardtype to enum");
-
-                                        return null;
+                                        throw new InternalServerErrorException("could not convert cardtype to enum");
                                     }
-                                    card.Description = reader.GetString(4);
-                                    if (Enum.TryParse<ElementType>(reader.GetString(5), out ElementType elType))
+                                    if (!reader.IsDBNull(4))
                                     {
-                                        card.Element = elType;
-                                    }
-                                    else
-                                    {
-                                        Console.WriteLine("could not convert elementtype to enum");
-
-                                        return null;
+                                        card.Description = reader.GetString(4);
+                                        if (Enum.TryParse<ElementType>(reader.GetString(5), out ElementType elType))
+                                        {
+                                            card.Element = elType;
+                                        }
+                                        else
+                                        {
+                                            throw new InternalServerErrorException("could not convert Elemtype to enum");
+                                        }
                                     }
                                     cardList.Add(card);
                                 }
@@ -289,9 +343,18 @@ namespace MTCG.Repositories
                         }
 
 
+
+
+
+
+                        foreach (Card card in cardList)
+                        {
+                            Console.WriteLine(card.Id + " " + card.Name);
+                        }
+
                         using (var cmdb = connection.CreateCommand())
                         {
-                            cmdb.CommandText = $"DELETE FROM Packages WHERE Id = :packageId";
+                            cmdb.CommandText = $"DELETE FROM Package WHERE Id = :packageId";
                             IDataParameter p = cmdb.CreateParameter();
                             p.ParameterName = ":packageId";
                             p.Value = packageId;

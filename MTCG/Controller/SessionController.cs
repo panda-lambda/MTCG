@@ -20,7 +20,6 @@ namespace MTCG.Controller
         public SessionController(ISessionService sessionService)
         {
             _sessionService = sessionService ?? throw new ArgumentNullException(nameof(sessionService));
-           
         }
 
         public override void HandleRequest(HttpSvrEventArgs e)

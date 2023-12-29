@@ -23,6 +23,8 @@ namespace MTCG.Repositories
             _connectionFactory = connectionFactory;
 
         }
+
+
         public UserCredentials? GetHashByUsername(string username)
         {
             using (var connection = _connectionFactory.CreateConnection())

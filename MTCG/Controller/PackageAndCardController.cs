@@ -2,10 +2,14 @@
 using MTCG.HttpServer;
 using MTCG.Models;
 using MTCG.Services;
+using MTCG.Utilities;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
 namespace MTCG.Controller
@@ -65,13 +69,42 @@ namespace MTCG.Controller
         }
         public void BuyCardPackage(HttpSvrEventArgs e)
         {
+            try
+            {
+                List<Card>? package = _packageService.BuyPackage(e);
+                if (package == null)
+                {
+                    throw new InternalServerErrorException("package in controller null");
+                }
 
+                var options = new JsonSerializerOptions
+                {
+                    Converters = { new JsonStringEnumConverter() }
+                };
+             
+                string testo = System.Text.Json.JsonSerializer.Serialize(package,options);
+                Console.WriteLine("package and cards: "+testo);
+                e.Reply((int)HttpCodes.OK, System.Text.Json.JsonSerializer.Serialize(package,options));
+            }
+            catch (UnauthorizedException ex)
+            {
+                Console.WriteLine(ex.Message + "   in buycardpackage controller");
+                e.Reply((int)HttpCodes.UNAUTORIZED, "{\"description\":\"Access token is missing or invalid.\"}");
+            }
+            catch (InternalServerErrorException ex)
+            {
+                Console.WriteLine(ex.Message);
+                e.Reply((int)HttpCodes.INTERNAL_SERVER_ERROR, "{\"msg\":\"Something went wrong.\"}");
+            }
+            catch (NoAvailableCardsException)
+            {
+                e.Reply((int)HttpCodes.NOT_FOUND, "{\"description\":\" No card package available for buying.\"}");
+            }
+            catch (InsufficientCoinsException)
+            {
+                e.Reply((int)HttpCodes.FORBIDDEN, "{\"description\":\"Not enough money for buying a card package.\"}");
 
-            //                    e.Reply((int)HttpCodes.BAD_REQUEST, "{\"description\":\"User could not be logged in - got exception.\"}");
-
-            e.Reply((int)HttpCodes.OK, "{\"description\":\"A package has been successfully bought.\"}");
-            e.Reply((int)HttpCodes.FORBIDDEN, "{\"description\":\"Not enough money for buying a card package.\"}");
-            e.Reply((int)HttpCodes.NOT_FOUND, "{\"description\":\" No card package available for buying.\"}");
+            }
         }
 
 

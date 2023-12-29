@@ -2,6 +2,7 @@
 using MTCG.HttpServer;
 using MTCG.Models;
 using MTCG.Repositories;
+using MTCG.Utilities;
 using System;
 using System.Collections.Concurrent;
 using System.IdentityModel.Tokens.Jwt;
@@ -13,8 +14,8 @@ namespace MTCG.Services
 {
     public class SessionService : ISessionService
     {
-        private readonly UserRepository? _userRepository; 
-        private readonly SessionRepository? _sessionRepository; 
+        private readonly UserRepository? _userRepository;
+        private readonly SessionRepository? _sessionRepository;
         private readonly ConcurrentDictionary<Guid, UserSession> _sessions;
         private readonly UserService? _userService;
         private readonly string key = Guid.NewGuid().ToString();
@@ -37,27 +38,37 @@ namespace MTCG.Services
                 return null;
             }
             Guid? userId = ValidateToken(token);
-            Console.WriteLine("userid"+ userId);
+            Console.WriteLine("userid" + userId);
             if (userId == null || !userId.HasValue)
             {
                 Console.WriteLine("userId is null in authenticateuserandsesion in session servioce");
-                e.Reply((int)HttpCodes.UNAUTORIZED, "Invalid username/password provided.");
-                return null;
+                throw new UnauthorizedException("in authenticateUserAndSession - SessionService");
+            }
+
+            foreach (var value in _sessions)
+            {
+                Console.WriteLine("session: "+ value.Key + " von " + value.Value.Username);
             }
             UserSession? session = GetSession((Guid)userId);
-            if (session != null && userId!= null) {
-                Console.WriteLine("session guid with name : "+ _sessions[(Guid)userId].Username);
-            }
-            if (username!=  null)
+            if (session == null)
             {
-                if (_sessions[(Guid)userId].Username != username)
-                {
+                throw new UnauthorizedException("no session in  authenticateUserAndSession - SessionService");
 
+            }
+            if (session != null && userId != null)
+            {
+                Console.WriteLine("session guid with name : " + _sessions[(Guid)userId].Username);
+            }
+            if (username != null)
+            {
+                if (session?.Username != username)
+                {
+                    throw new UnauthorizedException("no session in  authenticateUserAndSession - SessionService");
                 }
             }
             Console.WriteLine();
-            return GetSession((Guid)userId);
-           
+            return session;
+
         }
 
         public string AuthenticateAndCreateSession(UserCredentials userCredentials)
@@ -105,9 +116,12 @@ namespace MTCG.Services
                 {
                     string userName = token.Replace("-mtcgToken", "");
                     userName = userName.Replace("Bearer ", "");
-                    Console.WriteLine("username in validatetoken: "+userName+".\n\n");
+                    Console.WriteLine("username in validatetoken: " + userName + ".\n\n");
 
-                    return _userRepository?.GetGuidByUserName(userName);
+                   
+                     Guid? userId =  _userRepository?.GetGuidByUserName(userName);
+                    Console.WriteLine("userId in validate token "+ userId?.ToString());
+                    return userId;
                 }
 
                 tokenHandler.ValidateToken(token, new TokenValidationParameters
@@ -214,7 +228,7 @@ namespace MTCG.Services
             return _sessions.TryRemove(userId, out _);
         }
 
-       private UserSession? GetSession(Guid userId)
+        private UserSession? GetSession(Guid userId)
         {
             _ = _sessions.TryGetValue(userId, value: out UserSession? session);
 
