@@ -13,6 +13,8 @@ namespace MTCG.Repositories
         public List<Card>? BuyPackage(Guid userId);
 
         public List<Card>? GetCardsByUser(Guid userId);
-        public List<Card>? GetDeckByUser(Guid userId);
+        public Deck GetDeckByUser(Guid userId);
+
+        public bool ConfigureDeckForUser(List<Guid> cardList);
     }
 }

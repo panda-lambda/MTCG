@@ -102,7 +102,7 @@ internal class Program
         {
             return typeof(SessionController);
         }
-        else if (path.StartsWith("/packages") || path.StartsWith("/transactions/") || path.StartsWith("/cards"))
+        else if (path.StartsWith("/packages") || path.StartsWith("/transactions/") || path.StartsWith("/cards") || path.StartsWith("/deck"))
         {
             return typeof(PackageAndCardController);
         }

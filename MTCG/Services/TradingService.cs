@@ -5,8 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace MTCG.Services
-{
-    public class TradingService : ITradingService
+{public class TradingService : ITradingService
     {
     }
 }

@@ -29,63 +29,55 @@ namespace MTCG.Services
             _sessions = new ConcurrentDictionary<Guid, UserSession>();
             _userService = (UserService)userService;
         }
-        public UserSession? AuthenticateUserAndSession(HttpSvrEventArgs e, string? username)
+        public Guid AuthenticateUserAndSession(HttpSvrEventArgs e, string? username)
         {
-            string? token = e.Headers?.FirstOrDefault(header => header.Name == "Authorization")?.Value;
-            if (token == null)
+            try
             {
-                e.Reply((int)HttpCodes.UNAUTORIZED, "Invalid username/password provided.");
-                return null;
-            }
-            Guid? userId = ValidateToken(token);
-            Console.WriteLine("userid" + userId);
-            if (userId == null || !userId.HasValue)
-            {
-                Console.WriteLine("userId is null in authenticateuserandsesion in session servioce");
-                throw new UnauthorizedException("in authenticateUserAndSession - SessionService");
-            }
-
-            foreach (var value in _sessions)
-            {
-                Console.WriteLine("session: "+ value.Key + " von " + value.Value.Username);
-            }
-            UserSession? session = GetSession((Guid)userId);
-            if (session == null)
-            {
-                throw new UnauthorizedException("no session in  authenticateUserAndSession - SessionService");
-
-            }
-            if (session != null && userId != null)
-            {
-                Console.WriteLine("session guid with name : " + _sessions[(Guid)userId].Username);
-            }
-            if (username != null)
-            {
-                if (session?.Username != username)
+                string? token = e.Headers?.FirstOrDefault(header => header.Name == "Authorization")?.Value;
+                if (token == null)
                 {
-                    throw new UnauthorizedException("no session in  authenticateUserAndSession - SessionService");
-                }
-            }
-            Console.WriteLine();
-            return session;
+                    throw new UnauthorizedException("in authenticateUserAndSession - SessionService");
 
+                }
+                Guid? userId = ValidateToken(token);
+                Console.WriteLine("userid: " + userId);
+                if (userId == null || !userId.HasValue)
+                {
+                    Console.WriteLine("userId is null in authenticateuserandsesion in session servioce");
+                    throw new UnauthorizedException("in authenticateUserAndSession - SessionService");
+                }
+
+                UserSession? session = GetSession((Guid)userId);
+
+                if (session == null || username != null && session?.Username != username)
+                {
+                    throw new UnauthorizedException("username not matching in  authenticateUserAndSession - SessionService");
+                }
+
+                return (Guid)userId;
+            }
+            catch (UnauthorizedException)
+            {
+                throw;
+            }
+            catch (Exception)
+            {
+                throw;
+            }
         }
 
         public string AuthenticateAndCreateSession(UserCredentials userCredentials)
         {
-            Console.WriteLine("im sessionservice");
+            //Console.WriteLine("im sessionservice");
             UserCredentials? user = _userRepository?.GetHashByUsername(userCredentials.Username);
 
             if (user == null || string.IsNullOrEmpty(user.Password) || !(user.Id.HasValue) || (_userService != null && !_userService.VerifyPassword(userCredentials.Password, user.Password)))
             {
                 return string.Empty;
             }
-            Console.WriteLine($"User {user.Username} with hased pw: {user.Password}");
+            //Console.WriteLine($"User {user.Username} with hased pw: {user.Password}");
 
-            string token = CreateSession((Guid)user.Id, userCredentials.Username);
-
-
-            return token;
+            return CreateSession((Guid)user.Id, userCredentials.Username);
         }
 
 
@@ -118,9 +110,9 @@ namespace MTCG.Services
                     userName = userName.Replace("Bearer ", "");
                     Console.WriteLine("username in validatetoken: " + userName + ".\n\n");
 
-                   
-                     Guid? userId =  _userRepository?.GetGuidByUserName(userName);
-                    Console.WriteLine("userId in validate token "+ userId?.ToString());
+
+                    Guid? userId = _userRepository?.GetGuidByUserName(userName);
+                    Console.WriteLine("userId in validate token " + userId?.ToString());
                     return userId;
                 }
 

@@ -10,6 +10,7 @@ using System.Linq.Expressions;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
+using System.Transactions;
 using System.Xml.Linq;
 
 namespace MTCG.Repositories
@@ -24,12 +25,17 @@ namespace MTCG.Repositories
 
 
         }
-        public List<Card>? GetDeckByUser(Guid userId)
+
+
+        public Deck GetDeckByUser(Guid userId)
         {
 
             using var connection = _connectionFactory.CreateConnection();
             try
             {
+
+
+                Deck deck = new Deck();
 
                 Console.WriteLine("uid: " + userId.ToString());
                 using (var cmd = connection.CreateCommand())
@@ -37,8 +43,8 @@ namespace MTCG.Repositories
 
                     cmd.CommandText = "CREATE TABLE IF NOT EXISTS DECKS " +
                          "(Id UUID PRIMARY KEY," +
-                         "OwnerId UUID REFERENCES Users(Id))" +
-                         "Description VARCHAR(250)"+
+                         "OwnerId UUID REFERENCES Users(Id)," +
+                         "Description VARCHAR(250)," +
                          "CardId1 UUID," +
                          "CardId2 UUID," +
                          "CardId3 UUID," +
@@ -47,17 +53,18 @@ namespace MTCG.Repositories
                          "FOREIGN KEY (CardId1) REFERENCES CARDS(Id)," +
                          "FOREIGN KEY (CardId2) REFERENCES CARDS(Id)," +
                          "FOREIGN KEY (CardId3) REFERENCES CARDS(Id)," +
-                         "FOREIGN KEY (CardId4) REFERENCES CARDS(Id)," +
-                         "FOREIGN KEY (CardId5) REFERENCES CARDS(Id))";
+                         "FOREIGN KEY (CardId4) REFERENCES CARDS(Id))";
 
                     cmd.ExecuteNonQuery();
 
+
+                    Console.WriteLine("nach db erstellen!");
                     List<Guid>? cardIds = new List<Guid>();
-                    Deck deck = new Deck();
+
                     deck.CardList = new List<Card>();
 
 
-                    cmd.CommandText = $"SELECT Id, Description CardId1, CardId2, CardId3, CardId4, CardId5 FROM DECK WHERE OWNERID = :p";
+                    cmd.CommandText = $"SELECT Id, Description CardId1, CardId2, CardId3, CardId4 FROM DECKS WHERE OWNERID = :p";
 
                     IDataParameter uid = cmd.CreateParameter();
                     uid.ParameterName = ":p";
@@ -69,10 +76,14 @@ namespace MTCG.Repositories
                     {
                         if (reader.Read())
                         {
-                            deck.Id = reader.GetGuid(0);
-                            deck.Description = reader.GetString(1);
 
-                            for (int i = 2; i <= 6; i++)
+                            deck.Id = reader.GetGuid(0);
+                            if (!reader.IsDBNull(1))
+                            {
+                                deck.Description = reader.GetString(1);
+                            }
+
+                            for (int i = 2; i < 5; i++)
                             {
                                 if (!reader.IsDBNull(i))
                                 {
@@ -80,13 +91,17 @@ namespace MTCG.Repositories
                                 }
                             }
                         }
-
+                        else
+                        {
+                            throw new UserHasNoCardsException("The request was fine, but the deck doesn't have any cards");
+                        }
                     }
-                    
 
-                    cmd.CommandText = "SELECT Id, Name, Damage FROM Cards WHERE Id IN (";
+                    Console.WriteLine("lesen des decks");
 
-                    for (int i = 0; i < 5; i++)
+                    cmd.CommandText = "SELECT Id, Name, Damage, Locked FROM Cards WHERE Id IN (";
+
+                    for (int i = 0; i < 3; i++)
                     {
                         string paramName = "@id" + i;
                         cmd.CommandText += paramName + (i < 5 - 1 ? ", " : "");
@@ -100,7 +115,9 @@ namespace MTCG.Repositories
                     cmd.CommandText += ")";
 
                     using (var reader = cmd.ExecuteReader())
+
                     {
+                        Console.WriteLine("nach execture reader select");
                         while (reader.Read())
                         {
                             Card card = new Card();
@@ -116,11 +133,29 @@ namespace MTCG.Repositories
                             }
 
                             card.Damage = reader.GetFloat(2);
+                            card.Locked = reader.GetBoolean(3);
 
                             deck.CardList.Add(card);
                         }
+                        if (deck.CardList.Count < 1)
+                        {
+                            throw new InvalidCardCountInDeck("invalid card count in deck");
+                        }
+
+
                     }
+
                 }
+                return deck;
+            }
+            catch (UserHasNoCardsException)
+            {
+                throw;
+            }
+
+            catch (InvalidCardCountInDeck)
+            {
+                throw;
             }
             catch (Exception ex)
             {
@@ -132,6 +167,7 @@ namespace MTCG.Repositories
         public List<Card>? GetCardsByUser(Guid userId)
         {
             Console.WriteLine(" in getcardsbyuser repo");
+            Console.WriteLine("user id in get cards by user : " + userId);
             using var connection = _connectionFactory.CreateConnection();
             try
             {
@@ -140,7 +176,7 @@ namespace MTCG.Repositories
                 using (var cmd = connection.CreateCommand())
                 {
                     List<Card>? cardList = new List<Card>();
-                    cmd.CommandText = "SELECT Id, Name, Damage FROM Cards WHERE OwnerId = :uid";
+                    cmd.CommandText = "SELECT Id, Name, Damage, Locked FROM Cards WHERE OwnerId = :uid";
 
                     IDataParameter uid = cmd.CreateParameter();
                     uid.ParameterName = ":uid";
@@ -167,16 +203,23 @@ namespace MTCG.Repositories
                             }
 
                             card.Damage = reader.GetFloat(2);
+                            card.Locked = reader.GetBoolean(3);
 
                             cardList.Add(card);
                         }
+
+                        Console.WriteLine("in get cards by user");
+                        Console.WriteLine(" count cards: "+ cardList.Count());
+
                         return cardList;
                     }
                 }
             }
+
+
             catch (Exception ex)
             {
-                throw new InternalServerErrorException(ex.Message + " in GetCrdsbyuser repository");
+                throw new InternalServerErrorException(ex.Message + " in GetCardsbyuser repository");
             }
         }
 
@@ -232,7 +275,7 @@ namespace MTCG.Repositories
                     using (var cmd = connection.CreateCommand())
                     {
                         cmd.Transaction = transaction;
-                        cmd.CommandText = "INSERT INTO CARDS (ID, NAME, DAMAGE, TYPE, LOCKED, ELEMENT) VALUES (:id, :n, :dmg, :t, :desc, :elm)";
+                        cmd.CommandText = "INSERT INTO CARDS (ID, NAME, DAMAGE, TYPE, LOCKED, ELEMENT) VALUES (:id, :n, :dmg, :t, :lock, :elm)";
 
                         var pId = cmd.CreateParameter();
                         pId.ParameterName = ":id";
@@ -250,9 +293,9 @@ namespace MTCG.Repositories
                         pType.ParameterName = ":t";
                         cmd.Parameters.Add(pType);
 
-                        var pDescription = cmd.CreateParameter();
-                        pDescription.ParameterName = ":desc";
-                        cmd.Parameters.Add(pDescription);
+                        var pLocked = cmd.CreateParameter();
+                        pLocked.ParameterName = ":lock";
+                        cmd.Parameters.Add(pLocked);
 
                         var pElement = cmd.CreateParameter();
                         pElement.ParameterName = ":elm";
@@ -266,14 +309,7 @@ namespace MTCG.Repositories
                                 pName.Value = card.Name.ToString();
                                 pDamage.Value = card.Damage;
                                 pType.Value = card.Type.ToString();
-                                if (string.IsNullOrEmpty(card.Description))
-                                {
-                                    pDescription.Value = DBNull.Value;
-                                }
-                                else
-                                {
-                                    pDescription.Value = card.Description;
-                                }
+                                pLocked.Value = card.Locked;
                                 pElement.Value = card.Element.ToString();
 
                                 cmd.ExecuteNonQuery();
@@ -509,6 +545,15 @@ namespace MTCG.Repositories
                         transaction.Commit();
                         return cardList;
                     }
+
+                    catch (InsufficientCoinsException)
+                    {
+                        throw;
+                    }
+                    catch (NoAvailableCardsException)
+                    {
+                        throw;
+                    }
                     catch (Exception ex)
                     {
                         transaction.Rollback();
@@ -519,5 +564,36 @@ namespace MTCG.Repositories
             }
         }
 
+        public bool ConfigureDeckForUser(List<Guid> cardList)
+        {
+            try
+            {
+                using (var connection = _connectionFactory.CreateConnection())
+                {
+                    using (var cmd = connection.CreateCommand())
+                    {
+                        cmd.CommandText = $"UPDATE DECKS SET CardId1 = :card1, CardId2 = :card2, CardId3 = :card3, CardId4 = :card4";
+
+                        for (int i = 0; i < 4; i++)
+                        {
+                            IDbDataParameter p = cmd.CreateParameter();
+                            p.ParameterName = $":card{i + 1}";
+                            p.Value = cardList[i];
+                            cmd.Parameters.Add(p);
+                        }
+
+                        cmd.ExecuteNonQuery();
+                        return true;
+
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
+            return false;
+
+        }
     }
 }

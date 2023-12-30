@@ -31,12 +31,22 @@ namespace MTCG.Utilities
     {
         public UserHasNoCardsException(string message) : base(message) { }
     }
-    //public class InsufficientCoinsException : Exception
-    //{
-    //    public InsufficientCoinsException(string message) : base(message) { }
-    //}
-    //public class InsufficientCoinsException : Exception
-    //{
-    //    public InsufficientCoinsException(string message) : base(message) { }
-    //}
+    public class InvalidCardCountInDeck : Exception
+    {
+        public InvalidCardCountInDeck(string message) : base(message) { }
+    }
+    public class UserNotCardOwnerException : Exception
+    {
+        public UserNotCardOwnerException(string message) : base(message) { }
+    }
+    public class UserNotAdminException : Exception
+    {
+        public UserNotAdminException(string message) : base(message) { }
+    } 
+    public class CardExistsAlreadyException : Exception
+    {
+        public CardExistsAlreadyException(string message) : base(message) { }
+    }
+
+
 }

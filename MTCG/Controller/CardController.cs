@@ -84,7 +84,7 @@ namespace MTCG.Controller
             //required: true
             
             e.Reply((int)HttpCodes.BAD_REQUEST, "The provided deck did not include the required amount of cards.");
-            e.Reply((int)HttpCodes.UNAUTORIZED, "Access token is missing or invalid.");
+           
             e.Reply((int)HttpCodes.FORBIDDEN, "At least one of the provided cards does not belong to the user or is not available.");
 
 

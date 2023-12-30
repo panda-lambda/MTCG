@@ -13,7 +13,10 @@ namespace MTCG.Services
         public string CreateNewPackage(HttpSvrEventArgs e);
         public List<Card>? BuyPackage(HttpSvrEventArgs e);
         public List<Card>? GetCardsByUser(HttpSvrEventArgs e);
-        public List<Card>? GetDeckByUser(HttpSvrEventArgs e);
-        
+        public Deck GetDeckByUser(HttpSvrEventArgs e);
+        public bool ConfigureDeckForUser(HttpSvrEventArgs e);
+
+
+
     }
 }

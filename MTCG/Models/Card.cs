@@ -17,10 +17,12 @@ namespace MTCG.Models
         public CardType Type { get; set; }
 
         [JsonIgnore]
-        public string? Description { set; get; }
+        public Boolean Locked { set; get; } = false;
 
         [JsonIgnore]
         public ElementType Element { get; set; }
+
+
 
     }
 }
