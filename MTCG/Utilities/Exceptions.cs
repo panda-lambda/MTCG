@@ -27,10 +27,10 @@ namespace MTCG.Utilities
     {
         public InternalServerErrorException(string message) : base(message) { }
     }
-    //public class InsufficientCoinsException : Exception
-    //{
-    //    public InsufficientCoinsException(string message) : base(message) { }
-    //}
+    public class UserHasNoCardsException : Exception
+    {
+        public UserHasNoCardsException(string message) : base(message) { }
+    }
     //public class InsufficientCoinsException : Exception
     //{
     //    public InsufficientCoinsException(string message) : base(message) { }

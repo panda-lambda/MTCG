@@ -11,5 +11,8 @@ namespace MTCG.Repositories
     {
         public bool AddPackage(Package package);
         public List<Card>? BuyPackage(Guid userId);
+
+        public List<Card>? GetCardsByUser(Guid userId);
+        public List<Card>? GetDeckByUser(Guid userId);
     }
 }

@@ -6,6 +6,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
@@ -20,7 +21,165 @@ namespace MTCG.Repositories
         public PackageAndCardRepository(IDatabaseConnectionFactory connectionFactory)
         {
             _connectionFactory = connectionFactory;
+
+
         }
+        public List<Card>? GetDeckByUser(Guid userId)
+        {
+
+            using var connection = _connectionFactory.CreateConnection();
+            try
+            {
+
+                Console.WriteLine("uid: " + userId.ToString());
+                using (var cmd = connection.CreateCommand())
+                {
+
+                    cmd.CommandText = "CREATE TABLE IF NOT EXISTS DECKS " +
+                         "(Id UUID PRIMARY KEY," +
+                         "OwnerId UUID REFERENCES Users(Id))" +
+                         "Description VARCHAR(250)"+
+                         "CardId1 UUID," +
+                         "CardId2 UUID," +
+                         "CardId3 UUID," +
+                         "CardId4 UUID," +
+                         "CardId5 UUID," +
+                         "FOREIGN KEY (CardId1) REFERENCES CARDS(Id)," +
+                         "FOREIGN KEY (CardId2) REFERENCES CARDS(Id)," +
+                         "FOREIGN KEY (CardId3) REFERENCES CARDS(Id)," +
+                         "FOREIGN KEY (CardId4) REFERENCES CARDS(Id)," +
+                         "FOREIGN KEY (CardId5) REFERENCES CARDS(Id))";
+
+                    cmd.ExecuteNonQuery();
+
+                    List<Guid>? cardIds = new List<Guid>();
+                    Deck deck = new Deck();
+                    deck.CardList = new List<Card>();
+
+
+                    cmd.CommandText = $"SELECT Id, Description CardId1, CardId2, CardId3, CardId4, CardId5 FROM DECK WHERE OWNERID = :p";
+
+                    IDataParameter uid = cmd.CreateParameter();
+                    uid.ParameterName = ":p";
+                    uid.Value = userId;
+                    cmd.Parameters.Add(uid);
+
+
+                    using (var reader = cmd.ExecuteReader())
+                    {
+                        if (reader.Read())
+                        {
+                            deck.Id = reader.GetGuid(0);
+                            deck.Description = reader.GetString(1);
+
+                            for (int i = 2; i <= 6; i++)
+                            {
+                                if (!reader.IsDBNull(i))
+                                {
+                                    cardIds.Add(reader.GetGuid(i));
+                                }
+                            }
+                        }
+
+                    }
+                    
+
+                    cmd.CommandText = "SELECT Id, Name, Damage FROM Cards WHERE Id IN (";
+
+                    for (int i = 0; i < 5; i++)
+                    {
+                        string paramName = "@id" + i;
+                        cmd.CommandText += paramName + (i < 5 - 1 ? ", " : "");
+
+                        var param = cmd.CreateParameter();
+                        param.ParameterName = paramName;
+                        param.Value = cardIds[i];
+                        cmd.Parameters.Add(param);
+                    }
+
+                    cmd.CommandText += ")";
+
+                    using (var reader = cmd.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            Card card = new Card();
+
+                            card.Id = reader.GetGuid(0);
+                            if (Enum.TryParse<FactionType>(reader.GetString(1), out FactionType type))
+                            {
+                                card.Name = type;
+                            }
+                            else
+                            {
+                                throw new InternalServerErrorException("could not convert factiontype to enum");
+                            }
+
+                            card.Damage = reader.GetFloat(2);
+
+                            deck.CardList.Add(card);
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new InternalServerErrorException(ex.Message + " in GetCrdsbyuser repository");
+            }
+        }
+
+
+        public List<Card>? GetCardsByUser(Guid userId)
+        {
+            Console.WriteLine(" in getcardsbyuser repo");
+            using var connection = _connectionFactory.CreateConnection();
+            try
+            {
+
+                Console.WriteLine("uid: " + userId.ToString());
+                using (var cmd = connection.CreateCommand())
+                {
+                    List<Card>? cardList = new List<Card>();
+                    cmd.CommandText = "SELECT Id, Name, Damage FROM Cards WHERE OwnerId = :uid";
+
+                    IDataParameter uid = cmd.CreateParameter();
+                    uid.ParameterName = ":uid";
+                    uid.Value = userId;
+                    cmd.Parameters.Add(uid);
+
+                    cmd.ExecuteNonQuery();
+
+                    using (var reader = cmd.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            Card card = new Card();
+
+                            card.Id = reader.GetGuid(0);
+                            Console.WriteLine("card with " + card.Id.ToString());
+                            if (Enum.TryParse<FactionType>(reader.GetString(1), out FactionType type))
+                            {
+                                card.Name = type;
+                            }
+                            else
+                            {
+                                throw new InternalServerErrorException("could not convert factiontype to enum");
+                            }
+
+                            card.Damage = reader.GetFloat(2);
+
+                            cardList.Add(card);
+                        }
+                        return cardList;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new InternalServerErrorException(ex.Message + " in GetCrdsbyuser repository");
+            }
+        }
+
 
         public bool AddPackage(Package package)
         {
@@ -37,7 +196,7 @@ namespace MTCG.Repositories
                         " Name VARCHAR(100)," +
                         " Damage DECIMAL(7, 2)," +
                         " Type VARCHAR(50)," +
-                        " Description VARCHAR(350)," +
+                        " Locked BOOLEAN ," +
                         " Element VARCHAR(50)   ," +
                         "OwnerId UUID REFERENCES Users(Id))";
                     cmd.ExecuteNonQuery();
@@ -73,7 +232,7 @@ namespace MTCG.Repositories
                     using (var cmd = connection.CreateCommand())
                     {
                         cmd.Transaction = transaction;
-                        cmd.CommandText = "INSERT INTO CARDS (ID, NAME, DAMAGE, TYPE, DESCRIPTION, ELEMENT) VALUES (:id, :n, :dmg, :t, :desc, :elm)";
+                        cmd.CommandText = "INSERT INTO CARDS (ID, NAME, DAMAGE, TYPE, LOCKED, ELEMENT) VALUES (:id, :n, :dmg, :t, :desc, :elm)";
 
                         var pId = cmd.CreateParameter();
                         pId.ParameterName = ":id";
@@ -182,6 +341,9 @@ namespace MTCG.Repositories
             return false;
         }
 
+
+
+
         public List<Card>? BuyPackage(Guid userId)
         {
             using (var connection = _connectionFactory.CreateConnection())
@@ -201,7 +363,7 @@ namespace MTCG.Repositories
 
                             using (var reader = cmd.ExecuteReader())
                             {
-                                
+
                                 if (reader.Read())
                                 {
                                     coinCount = reader.GetInt32(0);
@@ -286,7 +448,7 @@ namespace MTCG.Repositories
 
                         using (var cmd = connection.CreateCommand())
                         {
-                            cmd.CommandText = "SELECT Id, Name, Damage, Type, Description, Element FROM Cards WHERE Id IN (";
+                            cmd.CommandText = "SELECT Id, Name, Damage FROM Cards WHERE Id IN (";
 
                             for (int i = 0; i < 5; i++)
                             {
@@ -316,27 +478,9 @@ namespace MTCG.Repositories
                                     {
                                         throw new InternalServerErrorException("could not convert factiontype to enum");
                                     }
+
                                     card.Damage = reader.GetFloat(2);
-                                    if (Enum.TryParse<CardType>(reader.GetString(3), out CardType cardType))
-                                    {
-                                        card.Type = cardType;
-                                    }
-                                    else
-                                    {
-                                        throw new InternalServerErrorException("could not convert cardtype to enum");
-                                    }
-                                    if (!reader.IsDBNull(4))
-                                    {
-                                        card.Description = reader.GetString(4);
-                                        if (Enum.TryParse<ElementType>(reader.GetString(5), out ElementType elType))
-                                        {
-                                            card.Element = elType;
-                                        }
-                                        else
-                                        {
-                                            throw new InternalServerErrorException("could not convert Elemtype to enum");
-                                        }
-                                    }
+
                                     cardList.Add(card);
                                 }
                             }

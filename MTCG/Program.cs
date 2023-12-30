@@ -62,12 +62,12 @@ internal class Program
 
 
         Console.WriteLine("Message: " + e.PlainMessage);
-        Console.WriteLine(   "Header:\n"   );
+        Console.WriteLine("Header:\n");
         foreach (var header in e.Headers)
         {
             Console.WriteLine(header.Name + " : header.Value");
         }
-       
+
         Console.WriteLine($"Methode: {e.Method}");
         Console.WriteLine($"Pfad: {e.Path}");
 
@@ -79,7 +79,7 @@ internal class Program
         }
 
         Type? controllerType = DetermineControllerType(e.Path);
-        if (controllerType != null && serviceProvider !=null)
+        if (controllerType != null && serviceProvider != null)
         {
             var controller = serviceProvider.GetService(controllerType) as BaseController;
             controller?.HandleRequest(e);
@@ -102,11 +102,7 @@ internal class Program
         {
             return typeof(SessionController);
         }
-        else if (path.StartsWith("/cards"))
-        {
-            return typeof(CardController);
-        }
-        else if (path.StartsWith("/packages") || path.StartsWith("/transactions/"))
+        else if (path.StartsWith("/packages") || path.StartsWith("/transactions/") || path.StartsWith("/cards"))
         {
             return typeof(PackageAndCardController);
         }

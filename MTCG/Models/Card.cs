@@ -1,4 +1,6 @@
-﻿namespace MTCG.Models
+﻿using System.Text.Json.Serialization;
+
+namespace MTCG.Models
 {
     public class Card
     {
@@ -10,8 +12,14 @@
         public Guid Id { get; set; }
         public FactionType Name { get; set; }
         public float Damage { get; set; }
+
+        [JsonIgnore]
         public CardType Type { get; set; }
+
+        [JsonIgnore]
         public string? Description { set; get; }
+
+        [JsonIgnore]
         public ElementType Element { get; set; }
 
     }

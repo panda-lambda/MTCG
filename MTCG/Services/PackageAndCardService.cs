@@ -39,7 +39,73 @@ namespace MTCG.Services
                 throw new UnauthorizedException("could not authenticate in buy package");
             }
             return _packageAndCardRepository.BuyPackage((Guid)userId);
+
+
+
+
         }
+
+        public List<Card>? GetDeckByUser(HttpSvrEventArgs e)
+        {
+            UserSession? session = _sessionService.AuthenticateUserAndSession(e, null);
+            if (session == null || String.IsNullOrEmpty(session.Username))
+            {
+                throw new UnauthorizedException("could not authenticate in get cards");
+            }
+            Guid? userId = _userRepository.GetGuidByUserName(session.Username);
+            if (userId == null)
+            {
+                throw new UnauthorizedException("could not authenticate in get cards");
+            }
+            List<Card>? cardList = _packageAndCardRepository.GetDeckByUser((Guid)userId);
+
+            if (cardList != null)
+            {
+                Console.WriteLine("cardList not null in service");
+                foreach (Card card in cardList)
+                {
+
+                    Console.WriteLine(card.Id.ToString());
+                }
+
+
+            }
+            return cardList;
+        }
+
+
+
+        public List<Card>? GetCardsByUser(HttpSvrEventArgs e)
+        {
+            UserSession? session = _sessionService.AuthenticateUserAndSession(e, null);
+            if (session == null || String.IsNullOrEmpty(session.Username))
+            {
+                throw new UnauthorizedException("could not authenticate in get cards");
+            }
+            Guid? userId = _userRepository.GetGuidByUserName(session.Username);
+            if (userId == null)
+            {
+                throw new UnauthorizedException("could not authenticate in get cards");
+            }
+            List<Card>? cardList = _packageAndCardRepository.GetCardsByUser((Guid)userId);
+
+            if (cardList != null)
+            {
+                Console.WriteLine("cardList not null in service");
+                foreach (Card card in cardList)
+                {
+
+                    Console.WriteLine(card.Id.ToString());
+                }
+
+
+            }
+            return cardList;
+        }
+
+
+
+
 
         public string CreateNewPackage(HttpSvrEventArgs e)
         {

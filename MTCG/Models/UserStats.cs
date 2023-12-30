@@ -17,7 +17,7 @@ namespace MTCG.Models
 
         public Guid Id { get; set; }    
         public string Name { get; set; } = string.Empty;
-        public int Elo { get; set; } = 0;
+        public int Elo { get; set; } = 1000;
         public int Wins { get; set; } = 0;
         public int Losses { get; set; } = 0;
     

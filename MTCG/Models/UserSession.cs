@@ -19,6 +19,9 @@ namespace MTCG.Models
         public string Token { get; set; } = string.Empty;
         public long CreatedAt { get; set; }
         public long ExpiresAt { get; set; }
+        public bool IsFighting { get; set; } = false;
+
+
 
     }
 
