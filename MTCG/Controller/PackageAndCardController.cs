@@ -92,7 +92,7 @@ namespace MTCG.Controller
 
             catch (UnauthorizedException ex)
             {
-                Console.WriteLine(ex.Message + "   in buycardpackage controller");
+                Console.WriteLine(ex.Message + "   in getdeckbyuser controller");
                 e.Reply((int)HttpCodes.UNAUTORIZED, "{\"description\":\"Access token is missing or invalid.\"}");
             }
             catch (Exception ex)

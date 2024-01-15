@@ -63,8 +63,11 @@ namespace MTCG.HttpServer
                     int n = client.GetStream().Read(buf, 0, buf.Length);
                     data += Encoding.ASCII.GetString(buf, 0, n);
                 }
-
-                Incoming?.Invoke(this, new HttpSvrEventArgs(client, data));
+                var thread = new Thread(() =>
+                {
+                    Incoming?.Invoke(this, new HttpSvrEventArgs(client, data));
+                });
+                thread.Start();
             }
 
             _Listener.Stop();

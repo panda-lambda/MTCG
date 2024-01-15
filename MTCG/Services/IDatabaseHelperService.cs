@@ -6,8 +6,8 @@ using System.Threading.Tasks;
 
 namespace MTCG.Services
 {
-    public class CardService : ICardService
+    public interface IDatabaseHelperService
     {
-
+         void InitializeDatabase();
     }
 }

@@ -12,6 +12,8 @@ using System.Net.Sockets;
 using System.Text;
 using System.Text.Json;
 using MTCG.Services;
+using Newtonsoft.Json;
+using Microsoft.Extensions.Configuration;
 
 internal class Program
 {
@@ -28,29 +30,45 @@ internal class Program
 
 
     {
+  
+
+        var configuration = new ConfigurationBuilder()
+      .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+      .Build();
+
+
         serviceProvider = new ServiceCollection()
          .AddSingleton<IDatabaseConnectionFactory, DatabaseConnectionFactory>()
+          .AddSingleton<IConfiguration>(configuration)
          .AddScoped<IUserRepository, UserRepository>()
          .AddScoped<ISessionRepository, SessionRepository>()
          .AddScoped<IPackageAndCardRepository, PackageAndCardRepository>()
+         .AddScoped<IDatabaseHelperRepository, DatabaseHelperRepository>()
          .AddScoped<IUserService, UserService>()
          .AddScoped<ISessionService, SessionService>()
          .AddScoped<IPackageAndCardService, PackageAndCardService>()
-         .AddScoped<ICardService, CardService>()
          .AddScoped<ITradingService, TradingService>()
+         .AddScoped<IDatabaseHelperService,DatabaseHelperService>()
          .AddTransient<UserController>()
          .AddTransient<SessionController>()
          .AddTransient<PackageAndCardController>()
          .AddTransient<CardController>()
          .BuildServiceProvider();
 
+        using (var scope = serviceProvider.CreateScope())
+        {
+            var databaseHelperService = scope.ServiceProvider.GetRequiredService<IDatabaseHelperService>();
+
+            databaseHelperService.InitializeDatabase();           
+        }
+
         HttpSvr svr = new();
+
+
         svr.Incoming += HandleRequest;
 
         svr.Run();
 
-
-        //Console.WriteLine(Configuration.Instance.DatabasePath);
     }
 
 
@@ -65,7 +83,7 @@ internal class Program
         Console.WriteLine("Header:\n");
         foreach (var header in e.Headers)
         {
-            Console.WriteLine(header.Name + " : header.Value");
+            Console.WriteLine(header.Name + $" : {header.Value}");
         }
 
         Console.WriteLine($"Methode: {e.Method}");
@@ -81,8 +99,13 @@ internal class Program
         Type? controllerType = DetermineControllerType(e.Path);
         if (controllerType != null && serviceProvider != null)
         {
-            var controller = serviceProvider.GetService(controllerType) as BaseController;
-            controller?.HandleRequest(e);
+
+            using (var scope = serviceProvider.CreateScope())
+            {
+                var scopedProvider = scope.ServiceProvider;
+                var controller = serviceProvider.GetService(controllerType) as BaseController;
+                controller?.HandleRequest(e);
+            }
         }
         else
             e.Reply((int)HttpCodes.BAD_REQUEST, "Bad request!");

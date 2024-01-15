@@ -141,7 +141,7 @@ namespace MTCG.Services
                     throw new UserNotCardOwnerException("At least one of the provided cards does not belong to the user or is not available.");
                 }
             }
-            return _packageAndCardRepository.ConfigureDeckForUser(cardIds);
+            return _packageAndCardRepository.ConfigureDeckForUser(cardIds, userId);
 
 
 

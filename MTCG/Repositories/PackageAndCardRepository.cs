@@ -1,6 +1,7 @@
 ﻿using MTCG.Data;
 using MTCG.Models;
 using MTCG.Utilities;
+using Npgsql;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -40,25 +41,6 @@ namespace MTCG.Repositories
                 Console.WriteLine("uid: " + userId.ToString());
                 using (var cmd = connection.CreateCommand())
                 {
-
-                    cmd.CommandText = "CREATE TABLE IF NOT EXISTS DECKS " +
-                         "(Id UUID PRIMARY KEY," +
-                         "OwnerId UUID REFERENCES Users(Id)," +
-                         "Description VARCHAR(250)," +
-                         "CardId1 UUID," +
-                         "CardId2 UUID," +
-                         "CardId3 UUID," +
-                         "CardId4 UUID," +
-                         "CardId5 UUID," +
-                         "FOREIGN KEY (CardId1) REFERENCES CARDS(Id)," +
-                         "FOREIGN KEY (CardId2) REFERENCES CARDS(Id)," +
-                         "FOREIGN KEY (CardId3) REFERENCES CARDS(Id)," +
-                         "FOREIGN KEY (CardId4) REFERENCES CARDS(Id))";
-
-                    cmd.ExecuteNonQuery();
-
-
-                    Console.WriteLine("nach db erstellen!");
                     List<Guid>? cardIds = new List<Guid>();
 
                     deck.CardList = new List<Card>();
@@ -101,10 +83,16 @@ namespace MTCG.Repositories
 
                     cmd.CommandText = "SELECT Id, Name, Damage, Locked FROM Cards WHERE Id IN (";
 
-                    for (int i = 0; i < 3; i++)
+                    for (int i = 0; i < cardIds.Count; i++)
                     {
                         string paramName = "@id" + i;
-                        cmd.CommandText += paramName + (i < 5 - 1 ? ", " : "");
+                        cmd.CommandText += paramName;
+
+                        // Füge ein Komma hinzu, außer nach dem letzten Parameter
+                        if (i < cardIds.Count - 1)
+                        {
+                            cmd.CommandText += ", ";
+                        }
 
                         var param = cmd.CreateParameter();
                         param.ParameterName = paramName;
@@ -209,7 +197,7 @@ namespace MTCG.Repositories
                         }
 
                         Console.WriteLine("in get cards by user");
-                        Console.WriteLine(" count cards: "+ cardList.Count());
+                        Console.WriteLine(" count cards: " + cardList.Count());
 
                         return cardList;
                     }
@@ -232,40 +220,9 @@ namespace MTCG.Repositories
 
             try
             {
-                using (var cmd = connection.CreateCommand())
-                {
-                    cmd.CommandText = "CREATE TABLE IF NOT EXISTS CARDS " +
-                        "(Id UUID PRIMARY KEY," +
-                        " Name VARCHAR(100)," +
-                        " Damage DECIMAL(7, 2)," +
-                        " Type VARCHAR(50)," +
-                        " Locked BOOLEAN ," +
-                        " Element VARCHAR(50)   ," +
-                        "OwnerId UUID REFERENCES Users(Id))";
-                    cmd.ExecuteNonQuery();
-                    cmd.Dispose();
-                    Console.WriteLine("nach create cards");
 
 
-                }
 
-                using (var cmd = connection.CreateCommand())
-                {
-                    cmd.CommandText = "CREATE TABLE IF NOT EXISTS Package (Id UUID PRIMARY KEY," +
-                        "CardId1 UUID," +
-                        "CardId2 UUID," +
-                        "CardId3 UUID," +
-                        "CardId4 UUID," +
-                        "CardId5 UUID," +
-                        "FOREIGN KEY (CardId1) REFERENCES CARDS(Id)," +
-                        "FOREIGN KEY (CardId2) REFERENCES CARDS(Id)," +
-                        "FOREIGN KEY (CardId3) REFERENCES CARDS(Id)," +
-                        "FOREIGN KEY (CardId4) REFERENCES CARDS(Id)," +
-                        "FOREIGN KEY (CardId5) REFERENCES CARDS(Id))";
-                    cmd.ExecuteNonQuery();
-                    cmd.Dispose();
-                    Console.WriteLine("nach create pakage");
-                }
 
                 if (package.CardList != null)
                 {
@@ -564,35 +521,67 @@ namespace MTCG.Repositories
             }
         }
 
-        public bool ConfigureDeckForUser(List<Guid> cardList)
+        public bool ConfigureDeckForUser(List<Guid> cardList, Guid user)
         {
             try
             {
                 using (var connection = _connectionFactory.CreateConnection())
                 {
+                    Console.WriteLine( "in configure deck");
+
                     using (var cmd = connection.CreateCommand())
                     {
-                        cmd.CommandText = $"UPDATE DECKS SET CardId1 = :card1, CardId2 = :card2, CardId3 = :card3, CardId4 = :card4";
+                        Guid newId = Guid.NewGuid();
+
+                        cmd.CommandText = @"
+            INSERT INTO DECKS (Id, OwnerId, CardId1, CardId2, CardId3, CardId4) 
+            VALUES (:id,:owner, :card1, :card2, :card3, :card4)
+            ON CONFLICT (OwnerId) DO UPDATE 
+            SET CardId1 = EXCLUDED.CardId1, 
+                CardId2 = EXCLUDED.CardId2, 
+                CardId3 = EXCLUDED.CardId3, 
+                CardId4 = EXCLUDED.CardId4";
+
+                        IDbDataParameter idP = cmd.CreateParameter();
+                        idP.ParameterName = ":id";
+                        idP.Value = newId;
+                        cmd.Parameters.Add(idP);
+
+                        IDbDataParameter ownerP = cmd.CreateParameter();
+                        ownerP.ParameterName = ":owner";
+                        ownerP.Value = user;
+                        cmd.Parameters.Add(ownerP);
 
                         for (int i = 0; i < 4; i++)
                         {
-                            IDbDataParameter p = cmd.CreateParameter();
-                            p.ParameterName = $":card{i + 1}";
-                            p.Value = cardList[i];
-                            cmd.Parameters.Add(p);
+                            IDbDataParameter cardParam = cmd.CreateParameter();
+                            cardParam.ParameterName = $":card{i + 1}";
+                            cardParam.Value = cardList[i];
+                            cmd.Parameters.Add(cardParam);
                         }
 
                         cmd.ExecuteNonQuery();
-                        return true;
-
                     }
                 }
+                return true; 
+
+
+
+
+
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.Message);
+                Console.WriteLine("Fehler: " + ex.Message);
+                if (ex.InnerException != null)
+                {
+                    Console.WriteLine("Innere Ausnahme: " + ex.InnerException.Message);
+                }
+                Console.WriteLine("StackTrace: " + ex.StackTrace);
+                return false;
             }
-            return false;
+
+            
 
         }
     }

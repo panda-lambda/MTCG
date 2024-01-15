@@ -11,10 +11,10 @@ namespace MTCG.Services
 {
     internal class UserService : IUserService
     {
-        private readonly UserRepository? _userRepository; // = new UserRepository();
+        private readonly UserRepository? _userRepository;
         private const int SaltSize = 16; // 128 bit 
         private const int KeySize = 32;  // 256 bit
-        private const int Iterations = 10000;  // Number of iterations
+        private const int Iterations = 10000;  // iterations
 
         public UserService(IUserRepository userRepository)
         {
@@ -44,7 +44,7 @@ namespace MTCG.Services
             try
             {
                 UserCredentials userCredentials = new() { Username = username, Password = hashedPassword };
-                
+
                 if (_userRepository != null && _userRepository.registerUser(userCredentials))
                     return true;
                 else

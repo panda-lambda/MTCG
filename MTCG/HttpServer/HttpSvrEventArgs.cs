@@ -150,7 +150,7 @@ namespace MTCG.HttpServer
                 headers += $"Content-Length: {contentLength}\r\n";
             }
 
-            string fullResponse = statusDescription + headers + "\r\n" + payload+"\r\n";
+            string fullResponse = statusDescription + headers + "\r\n" + payload+"\r\n\n";
 
             Console.WriteLine("Full response: " + fullResponse + "\n\n\n------");
 

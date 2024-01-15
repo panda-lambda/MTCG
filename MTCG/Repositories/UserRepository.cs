@@ -188,12 +188,7 @@ namespace MTCG.Repositories
 
                     try
                     {
-                        cmd.CommandText = "CREATE TABLE IF NOT EXISTS USERS (id UUID PRIMARY KEY, name VARCHAR(255), password VARCHAR(255))";
-                        cmd.ExecuteNonQuery();
-                        cmd.CommandText = "CREATE TABLE IF NOT EXISTS USERDATA (Id UUID PRIMARY KEY, Name VARCHAR(55), Bio VARCHAR(255), Image VARCHAR(50), Coins INTEGER)";
-                        cmd.ExecuteNonQuery();
-                        cmd.CommandText = "CREATE TABLE IF NOT EXISTS USERSTATS (Id UUID PRIMARY KEY, Name VARCHAR(55), Elo INTEGER, WINS INTEGER, LOSSES INTEGER)";
-                        cmd.ExecuteNonQuery();
+                  
 
                         cmd.CommandText = "SELECT COUNT(*) FROM USERS WHERE NAME = :n";
                         IDataParameter p = cmd.CreateParameter();

@@ -1,4 +1,5 @@
-﻿using Microsoft.IdentityModel.Tokens;
+﻿using Microsoft.Extensions.Configuration;
+using Microsoft.IdentityModel.Tokens;
 using MTCG.HttpServer;
 using MTCG.Models;
 using MTCG.Repositories;
@@ -18,16 +19,17 @@ namespace MTCG.Services
         private readonly SessionRepository? _sessionRepository;
         private readonly ConcurrentDictionary<Guid, UserSession> _sessions;
         private readonly UserService? _userService;
-        private readonly string key = Guid.NewGuid().ToString();
+        private readonly string? _key; 
 
 
 
-        public SessionService(ISessionRepository sessionRepository, IUserRepository userRepository, IUserService userService)
+        public SessionService(ISessionRepository sessionRepository, IUserRepository userRepository, IUserService userService, IConfiguration configuration)
         {
             _sessionRepository = (SessionRepository?)sessionRepository;
             _userRepository = (UserRepository?)userRepository;
             _sessions = new ConcurrentDictionary<Guid, UserSession>();
             _userService = (UserService)userService;
+            _key = configuration["AppSettings:SecretKey"] ?? throw new InvalidOperationException("JWT Secret Key is not configured properly.");
         }
         public Guid AuthenticateUserAndSession(HttpSvrEventArgs e, string? username)
         {
@@ -100,7 +102,7 @@ namespace MTCG.Services
 
         {
             var tokenHandler = new JwtSecurityTokenHandler();
-            var tempKey = Encoding.ASCII.GetBytes(key);
+            var tempKey = Encoding.ASCII.GetBytes(_key);
             try
             {
                 Console.WriteLine("token string last 10:" + token.Substring(token.Length - 10) + "\n");
@@ -156,7 +158,7 @@ namespace MTCG.Services
         public Guid? GetGuidFromExpiredToken(string token)
         {
             var tokenHandler = new JwtSecurityTokenHandler();
-            var tempKey = Encoding.ASCII.GetBytes(key);
+            var tempKey = Encoding.ASCII.GetBytes(_key);
 
             try
             {
@@ -189,7 +191,7 @@ namespace MTCG.Services
         private string GenerateJwtToken(Guid id, string userName)
         {
 
-            var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key));
+            var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_key));
             var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
 
             var header = new JwtHeader(credentials);

@@ -14,10 +14,10 @@ namespace MTCG.Controller
     public class CardController : BaseController
     {
 
-        private ICardService _cardService;
-        public CardController(ICardService cardService)        {
-            _cardService = cardService ?? throw new ArgumentNullException(nameof(cardService));
-        }
+        //private ICardService _cardService;
+        //public CardController(ICardService cardService)        {
+        //    _cardService = cardService ?? throw new ArgumentNullException(nameof(cardService));
+        //}
 
 
         public override void HandleRequest(HttpSvrEventArgs e)
