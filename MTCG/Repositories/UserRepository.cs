@@ -1,11 +1,13 @@
 ﻿using MTCG.Data;
 using MTCG.Models;
+using MTCG.Utilities;
 using Npgsql;
 using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Drawing;
 using System.Linq;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading.Tasks;
 using System.Transactions;
@@ -115,7 +117,7 @@ namespace MTCG.Repositories
                     {
                         cmd.CommandText = "UPDATE USERDATA SET COINS = :coins WHERE NAME = :user";
 
-                        
+
                         IDataParameter c = cmd.CreateParameter();
                         c.ParameterName = ":coins";
                         c.Value = amount;
@@ -173,8 +175,68 @@ namespace MTCG.Repositories
                 }
 
             }
-        }
 
+
+        }
+        public UserData? GetUserData(Guid userId)
+        {
+            using (var connection = _connectionFactory.CreateConnection())
+            {
+                try
+                {
+                    using (var cmd = connection.CreateCommand())
+                    {
+                        cmd.CommandText = "SELECT * FROM USERDATA WHERE ID= :n";
+                        IDataParameter n = cmd.CreateParameter();
+                        n.ParameterName = ":n";
+                        n.Value = userId;
+                        cmd.Parameters.Add(n);
+                        using (var reader = cmd.ExecuteReader())
+                        {
+                            if (reader.Read())
+                            {
+                                Guid id = reader.GetGuid(0);
+
+                                string name = reader.GetString(1);
+                                string? bio = null;
+                                string? img = null;
+                                    int coins = 0;
+
+                                if (!reader.IsDBNull(2))
+                                {
+                                    bio = reader.GetString(2);
+                                }
+
+                                if (!reader.IsDBNull(3))
+                                {
+                                    img = reader.GetString(3);
+                                }
+                                if (!reader.IsDBNull(4))
+                                {
+                                    coins = reader.GetInt32(4);
+                                }
+                                Console.WriteLine("coins hat "+ coins + " !");
+                                return new UserData
+                                {
+                                    Name = name,
+                                    Bio = bio,
+                                    Image = img,
+                                    Coins = coins
+                                };
+                            }
+                        }
+                        return null;
+                    }
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e.Message);
+                    throw new UserNotFoundException("User not found");
+
+
+                }
+            }
+        }
 
         public bool registerUser(UserCredentials userCredentials)
         {
@@ -188,7 +250,7 @@ namespace MTCG.Repositories
 
                     try
                     {
-                  
+
 
                         cmd.CommandText = "SELECT COUNT(*) FROM USERS WHERE NAME = :n";
                         IDataParameter p = cmd.CreateParameter();

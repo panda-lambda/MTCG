@@ -42,11 +42,25 @@ namespace MTCG.Utilities
     public class UserNotAdminException : Exception
     {
         public UserNotAdminException(string message) : base(message) { }
-    } 
+    }
     public class CardExistsAlreadyException : Exception
     {
         public CardExistsAlreadyException(string message) : base(message) { }
     }
+    public class UserNotFoundException : Exception
+    {
+        public UserNotFoundException(string message) : base(message) { }
+    }
+
+    public class UserHasNoValidDeckException : Exception
+    {
+        public UserHasNoValidDeckException(string message) : base(message) { }
+    }  public class UserCurrentlyFightingException : Exception
+    {
+        public UserCurrentlyFightingException() : base() { }
+    }
+
+
 
 
 }

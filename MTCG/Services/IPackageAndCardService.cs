@@ -16,6 +16,8 @@ namespace MTCG.Services
         public Deck GetDeckByUser(HttpSvrEventArgs e);
         public bool ConfigureDeckForUser(HttpSvrEventArgs e);
 
+        public bool CheckForValidDeck( HttpSvrEventArgs e);
+
 
 
     }

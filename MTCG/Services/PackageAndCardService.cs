@@ -6,6 +6,7 @@ using Newtonsoft.Json;
 using Npgsql.NameTranslation;
 using System;
 using System.Collections.Generic;
+using System.Data.SqlTypes;
 using System.Linq;
 using System.Reflection.Metadata;
 using System.Text;
@@ -145,25 +146,21 @@ namespace MTCG.Services
 
 
 
-            //catch (UserNotCardOwnerException )
-            //{
-            //    throw;
-            //}
-            //catch (InvalidCardCountInDeck)
-            //{
-            //    throw;
-            //}
-            //catch (UnauthorizedException)
-            //{
-            //    throw;
-            //}
-            //catch (Exception)
-            //{
-            //    throw;
-            //}
 
         }
 
+        public bool CheckForValidDeck(HttpSvrEventArgs e)
+        {
+            Guid userId = _sessionService.AuthenticateUserAndSession(e, null);
+
+            Deck? deck = _packageAndCardRepository.GetDeckByUser(userId);
+            if (deck?.CardList?.Count == 4)
+            {
+                return true;
+            }
+            return false;
+
+        }
 
 
 

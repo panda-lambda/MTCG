@@ -18,17 +18,17 @@ namespace MTCG.Services
         private readonly UserRepository? _userRepository;
         private readonly SessionRepository? _sessionRepository;
         private readonly ConcurrentDictionary<Guid, UserSession> _sessions;
-        private readonly UserService? _userService;
-        private readonly string? _key; 
+        
+        private readonly string? _key;
+        private const int KeySize = 32;  
 
 
-
-        public SessionService(ISessionRepository sessionRepository, IUserRepository userRepository, IUserService userService, IConfiguration configuration)
+        public SessionService(ISessionRepository sessionRepository, IUserRepository userRepository, IConfiguration configuration)
         {
             _sessionRepository = (SessionRepository?)sessionRepository;
             _userRepository = (UserRepository?)userRepository;
             _sessions = new ConcurrentDictionary<Guid, UserSession>();
-            _userService = (UserService)userService;
+            
             _key = configuration["AppSettings:SecretKey"] ?? throw new InvalidOperationException("JWT Secret Key is not configured properly.");
         }
         public Guid AuthenticateUserAndSession(HttpSvrEventArgs e, string? username)
@@ -50,10 +50,15 @@ namespace MTCG.Services
                 }
 
                 UserSession? session = GetSession((Guid)userId);
+                
 
                 if (session == null || username != null && session?.Username != username)
                 {
                     throw new UnauthorizedException("username not matching in  authenticateUserAndSession - SessionService");
+                }
+                if (session.IsFighting)
+                {
+                    throw new UserCurrentlyFightingException();
                 }
 
                 return (Guid)userId;
@@ -73,7 +78,7 @@ namespace MTCG.Services
             //Console.WriteLine("im sessionservice");
             UserCredentials? user = _userRepository?.GetHashByUsername(userCredentials.Username);
 
-            if (user == null || string.IsNullOrEmpty(user.Password) || !(user.Id.HasValue) || (_userService != null && !_userService.VerifyPassword(userCredentials.Password, user.Password)))
+            if (user == null || string.IsNullOrEmpty(user.Password) || !(user.Id.HasValue) ||  !VerifyPassword(userCredentials.Password, user.Password))
             {
                 return string.Empty;
             }
@@ -96,6 +101,28 @@ namespace MTCG.Services
             _sessions.TryAdd(userId, session);
             return session.Token;
 
+        }
+        private static bool VerifyPassword(string inputPassword, string hash)
+        {
+            //try
+            string[] parts = hash.Split('.');
+            var iterations = int.Parse(parts[0]);
+            var salt = Convert.FromBase64String(parts[1]);
+            var originalKey = parts[2];
+
+            // same stuff again
+            using (var algorithm = new Rfc2898DeriveBytes(
+                inputPassword,
+                salt,
+                iterations,
+                HashAlgorithmName.SHA256))
+            {
+                var inputKey = Convert.ToBase64String(algorithm.GetBytes(KeySize));
+                Console.WriteLine($"comparing {inputKey} input vs {originalKey} the orginal\n");
+                if (inputKey == originalKey)
+                    Console.WriteLine("user succesfully authenticated!\n");
+                return inputKey == originalKey;
+            }
         }
 
         private Guid? ValidateToken(string token)
@@ -162,7 +189,7 @@ namespace MTCG.Services
 
             try
             {
-                // Validieren des Tokens, ohne das Ablaufdatum zu berücksichtigen
+                // nur validieren, ohne timecheck und hole userid claim
                 tokenHandler.ValidateToken(token, new TokenValidationParameters
                 {
                     ValidateIssuerSigningKey = true,
@@ -229,5 +256,18 @@ namespace MTCG.Services
             return session;
         }
 
+
+        public string? GetUsernameFromSession (Guid userId)
+        {
+            _ = _sessions.TryGetValue(userId, value: out UserSession? session);
+            return session?.Username;
+
+        }
+        public void SetFightingState (Guid userId, bool isFighting)
+        {
+            _ = _sessions.TryGetValue(userId, value: out UserSession? session);
+            if (session != null)
+            session.IsFighting = isFighting;
+        }   
     }
 }

@@ -30,7 +30,7 @@ internal class Program
 
 
     {
-  
+
 
         var configuration = new ConfigurationBuilder()
       .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
@@ -40,6 +40,7 @@ internal class Program
         serviceProvider = new ServiceCollection()
          .AddSingleton<IDatabaseConnectionFactory, DatabaseConnectionFactory>()
           .AddSingleton<IConfiguration>(configuration)
+          .AddSingleton<IGameService, GameService>()
          .AddScoped<IUserRepository, UserRepository>()
          .AddScoped<ISessionRepository, SessionRepository>()
          .AddScoped<IPackageAndCardRepository, PackageAndCardRepository>()
@@ -48,18 +49,18 @@ internal class Program
          .AddScoped<ISessionService, SessionService>()
          .AddScoped<IPackageAndCardService, PackageAndCardService>()
          .AddScoped<ITradingService, TradingService>()
-         .AddScoped<IDatabaseHelperService,DatabaseHelperService>()
+         .AddScoped<IDatabaseHelperService, DatabaseHelperService>()
          .AddTransient<UserController>()
          .AddTransient<SessionController>()
          .AddTransient<PackageAndCardController>()
-         .AddTransient<CardController>()
+         .AddTransient<BattleController>()
          .BuildServiceProvider();
 
         using (var scope = serviceProvider.CreateScope())
         {
             var databaseHelperService = scope.ServiceProvider.GetRequiredService<IDatabaseHelperService>();
 
-            databaseHelperService.InitializeDatabase();           
+            databaseHelperService.InitializeDatabase();
         }
 
         HttpSvr svr = new();
@@ -129,7 +130,10 @@ internal class Program
         {
             return typeof(PackageAndCardController);
         }
-
+        else if (path.StartsWith("/battles"))
+        {
+            return typeof(BattleController);
+        }
 
 
         return null;

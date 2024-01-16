@@ -1,6 +1,7 @@
 ﻿using MTCG.HttpServer;
 using MTCG.Models;
 using MTCG.Services;
+using MTCG.Utilities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -37,7 +38,7 @@ namespace MTCG.Controller
                 case "GET":
                     if (e.Path.StartsWith("/users/"))
                     {
-                        GetUserData(e);
+                        ExecuteWithExceptionHandling(e, GetUserData);
                     }
                         break;
                 default:
@@ -85,9 +86,14 @@ namespace MTCG.Controller
         {
             
             string username = e.Path.Replace("/users/", "");
-            Console.WriteLine("username "+username );
-            e.Reply((int)HttpCodes.OK, "{\"msg\":\"User exists.\"}");
-            return; 
+            Console.WriteLine("username " + username);
+            UserData? userData = _userService.GetUserData(e);
+            if (userData == null)
+            {
+                throw new UserNotFoundException("User not found");
+            }
+
+            e.Reply((int)HttpCodes.OK, System.Text.Json.JsonSerializer.Serialize(userData, JsonOptions.NullOptions));          
         }
 
 

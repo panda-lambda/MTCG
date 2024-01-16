@@ -2,26 +2,23 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
 namespace MTCG.Models
 {
-    public class UserData
+    public class Player
     {
-
-        /// <summary>This class provides the model for the user data.</summary>
+        /// <summary>This class provides the model for the battles.</summary>
 
         //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         // public properties                                                                                                //
         //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-        [JsonIgnore]
+        ///
+
         public Guid Id { get; set; }
-        public string? Name { get; set; }
-        public string? Bio { get; set; }
-        public string? Image { get; set; }
+        public UserStats stats { get; set; } = new UserStats(); 
+        public Deck deck { get; set; } = new Deck();  
+        
 
-        public int Coins { get; set; } = 20;
     }
-
 }

@@ -1,5 +1,4 @@
 ﻿using MTCG.HttpServer;
-using MTCG.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,11 +7,9 @@ using System.Threading.Tasks;
 
 namespace MTCG.Services
 {
-    public interface IUserService
+    public interface IBattleService
     {
-        internal bool CreateUser(string username, string password);
-
-        public UserData? GetUserData(HttpSvrEventArgs e);
+        public string? StartBattle(HttpSvrEventArgs e);
 
     }
 }

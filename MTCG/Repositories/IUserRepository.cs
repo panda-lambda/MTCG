@@ -17,5 +17,9 @@ namespace MTCG.Repositories
 
         public bool SetCoinsByUser(string username, int amount);
 
+        public UserData? GetUserData(Guid userId);
+
+
+
     }
 }

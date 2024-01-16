@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
+
 namespace MTCG.Models
 {
     public class Battle
@@ -14,10 +15,8 @@ namespace MTCG.Models
         // public properties                                                                                                //
         //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         public Guid BattleID { get; set; }
-        public Guid? PlayerOne { set; get; }
-        public Guid? PlayerTwo { set; get; }
-        public List<Card>? DeckPlayerOne { get; set; }
-        public List<Card>? DeckPlayerTwo { get; set; }
+        public Player? PlayerOne { set; get; }
+        public Player? PlayerTwo { set; get; }
         public List<string>? LogPlayerOne { get; set; }
         public List<string>? LogPlayerTwo { get; set; }
 

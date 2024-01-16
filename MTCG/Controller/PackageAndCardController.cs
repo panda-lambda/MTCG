@@ -83,7 +83,12 @@ namespace MTCG.Controller
         {
             try
             {
-                _packageService.GetDeckByUser(e);
+                Deck? deck = _packageService.GetDeckByUser(e);
+                if (deck == null)
+                {
+                    throw new UserHasNoCardsException("deck in controller null");
+                }
+                e.Reply((int)HttpCodes.OK, System.Text.Json.JsonSerializer.Serialize(deck.CardList, JsonOptions.DefaultOptions));
             }
             catch (UserHasNoCardsException)
             {
@@ -206,6 +211,6 @@ namespace MTCG.Controller
         }
 
 
-     
+
     }
 }

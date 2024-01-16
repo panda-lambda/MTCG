@@ -31,9 +31,20 @@ namespace MTCG.Controller
 
             catch (UserNotCardOwnerException ex)
             {
-                Console.WriteLine("ex dort: " + ex.Message);            
-            
+                Console.WriteLine("ex dort: " + ex.Message);
+
                 e.Reply((int)HttpCodes.FORBIDDEN, "{\"description\":\"At least one of the provided cards does not belong to the user or is not available..\"}");
+
+            }
+
+            catch (UserHasNoValidDeckException)
+            {
+                e.Reply((int)HttpCodes.CONFLICT, "{\"description\":\"User has no valid deck.\"}");
+            }
+
+            catch (UserCurrentlyFightingException)
+            {
+                e.Reply((int)HttpCodes.CONFLICT, "{\"description\":\"User is currently fighting.\"}");
 
             }
             catch (Exception ex)
@@ -41,6 +52,9 @@ namespace MTCG.Controller
                 Console.WriteLine(ex.Message);
                 e.Reply((int)HttpCodes.INTERNAL_SERVER_ERROR, "{\"msg\":\"Something went wrong.\"}");
             }
+
+            
+
 
         }
     }

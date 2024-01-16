@@ -27,6 +27,8 @@ namespace MTCG.Repositories
 
         }
 
+       
+
 
         public Deck GetDeckByUser(Guid userId)
         {
@@ -547,7 +549,7 @@ namespace MTCG.Repositories
                         idP.Value = newId;
                         cmd.Parameters.Add(idP);
 
-                        IDbDataParameter ownerP = cmd.CreateParameter();
+                        IDbDataParameter ownerP = cmd.CreateParameter(); 
                         ownerP.ParameterName = ":owner";
                         ownerP.Value = user;
                         cmd.Parameters.Add(ownerP);

@@ -1,10 +1,13 @@
-﻿using MTCG.Models;
+﻿using MTCG.HttpServer;
+using MTCG.Models;
 using MTCG.Repositories;
 using System;
 using System.Data;
 using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
 using System.Text;
+using MTCG.Utilities;
+using Microsoft.IdentityModel.Tokens;
 
 
 namespace MTCG.Services
@@ -12,13 +15,16 @@ namespace MTCG.Services
     internal class UserService : IUserService
     {
         private readonly UserRepository? _userRepository;
+        private readonly SessionService? _sessionService;
         private const int SaltSize = 16; // 128 bit 
         private const int KeySize = 32;  // 256 bit
         private const int Iterations = 10000;  // iterations
+        
 
-        public UserService(IUserRepository userRepository)
+        public UserService(IUserRepository userRepository, ISessionService sessionService)
         {
-            _userRepository = (UserRepository?)userRepository;
+            _userRepository = (UserRepository?)userRepository ?? throw new ArgumentNullException(nameof(userRepository));
+            _sessionService = (SessionService?)sessionService ?? throw new ArgumentNullException(nameof(sessionService));   
         }
 
         internal static string HashPassword(string password)
@@ -59,27 +65,29 @@ namespace MTCG.Services
             }
         }
 
-        public bool VerifyPassword(string inputPassword, string hash)
-        {
-            //try
-            string[] parts = hash.Split('.');
-            var iterations = int.Parse(parts[0]);
-            var salt = Convert.FromBase64String(parts[1]);
-            var originalKey = parts[2];
+        
 
-            // same stuff again
-            using (var algorithm = new Rfc2898DeriveBytes(
-                inputPassword,
-                salt,
-                iterations,
-                HashAlgorithmName.SHA256))
+        public UserData? GetUserData(HttpSvrEventArgs e)
+        {
+            Guid? userId = _sessionService?.AuthenticateUserAndSession(e, null);
+
+            if (userId == Guid.Empty || userId == null)
             {
-                var inputKey = Convert.ToBase64String(algorithm.GetBytes(KeySize));
-                Console.WriteLine($"comparing {inputKey} input vs {originalKey} the orginal\n");
-                if (inputKey == originalKey)
-                    Console.WriteLine("user succesfully authenticated!\n");
-                return inputKey == originalKey;
+                throw new UnauthorizedAccessException();
             }
+            string usernameClaim = e.Path.Replace("/users/", "");
+           string? userNameInSession = _sessionService?.GetUsernameFromSession((Guid)userId);
+            if (userNameInSession.IsNullOrEmpty() || usernameClaim != userNameInSession)
+            {
+                throw new UnauthorizedAccessException();
+            }
+           return  _userRepository?.GetUserData((Guid)userId);
+
+            
+
+
+
+            
         }
 
 

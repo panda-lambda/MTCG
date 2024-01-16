@@ -15,6 +15,14 @@ namespace MTCG.Utilities
             Converters = { new JsonStringEnumConverter() },
             DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingDefault
         };
-    }
 
+        public static readonly JsonSerializerOptions NullOptions = new JsonSerializerOptions
+        {
+            Converters = { new JsonStringEnumConverter() },
+            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+        };
+
+
+
+    }
 }
