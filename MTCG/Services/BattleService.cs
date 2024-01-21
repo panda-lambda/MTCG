@@ -45,7 +45,8 @@ namespace MTCG.Services
                 Id = (Guid)userId,
                 Deck = _packageService?.GetDeckByUser(e),
                 Stats = _userRepository?.GetUserStats((Guid)userId),
-                Name = _userRepository?.GetNameByGuid(userId)
+                Name = _userRepository?.GetNameByGuid(userId),
+                Client = e.Client
             };
 
             _gameService?.AddPlayer(player);

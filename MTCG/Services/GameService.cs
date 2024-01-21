@@ -11,6 +11,8 @@ using Newtonsoft.Json;
 using System.Buffers.Binary;
 using System.Net.Sockets;
 using System.Net.NetworkInformation;
+using Npgsql;
+using System.Net.Http;
 
 namespace MTCG.Services
 {
@@ -50,8 +52,8 @@ namespace MTCG.Services
                 {
                     if (playerQueue.TryDequeue(out Player playerOne) && playerQueue.TryDequeue(out Player playerTwo))
                     {
-                        Console.WriteLine("got player one: " + playerOne.Name);
-                        Console.WriteLine("and player two: " + playerTwo.Name);
+                        //Console.WriteLine("got player one: " + playerOne.Name);
+                        //Console.WriteLine("and player two: " + playerTwo.Name);
                         var battle = new Battle
                         {
                             BattleID = Guid.NewGuid(),
@@ -75,8 +77,8 @@ namespace MTCG.Services
             battle.LogPlayerOne.Add(completedBattle.PlayerOne.Name);
             battle.LogPlayerTwo.Add(completedBattle.PlayerTwo.Name);
 
-            await ReportLogToPlayer(completedBattle.PlayerOne.Id, completedBattle.LogPlayerOne);
-            await ReportLogToPlayer(completedBattle.PlayerTwo.Id, completedBattle.LogPlayerTwo);
+            await ReportLogToPlayer(completedBattle.PlayerOne.Client, completedBattle.LogPlayerOne);
+            await ReportLogToPlayer(completedBattle.PlayerTwo.Client, completedBattle.LogPlayerTwo);
 
         }
 
@@ -89,44 +91,68 @@ namespace MTCG.Services
 
 
 
-        private async Task ReportLogToPlayer(Guid userId, List<string> log)
+        private async Task ReportLogToPlayer(TcpClient client, List<string> log)
         {
-            string logString = string.Join(", ", log);
-            await Console.Out.WriteLineAsync("userId " + userId + " mit log: " + logString);
 
-
-            UserSession session = _sessionService.GetSession(userId);
-            if (session != null)
+         if (client == null)
             {
-
-                await Console.Out.WriteLineAsync($"session:  {session.Id} mit token {session.Token} and {session.Username}");
+                await Console.Out.WriteLineAsync(" client IS NULL in ReportLOg\n\n");
+                return;
             }
             else
             {
-                await Console.Out.WriteLineAsync("session already null");
+              
+                await Console.Out.WriteLineAsync("client not null in reportlog!!\n\n");
+                await Console.Out.WriteLineAsync($"Connected: {client.Connected}");
+                await Console.Out.WriteLineAsync($"Client stream: {client.GetStream}");  
+
+                string logString = string.Join(", ", log)+"\n\r\n\r";
+                
+                HttpSvrEventArgs e = new HttpSvrEventArgs(client);
+
+
+                e.Reply((int)HttpCodes.OK, JsonConvert.SerializeObject(logString));
             }
-
-            if (session.TCPClient != null)
-            {
-                await Console.Out.WriteLineAsync("got from session : " + session.Username);
-                Response(session?.TCPClient, logString);
+            
 
 
-            }
-            else
-            {
-                await Console.Out.WriteLineAsync("client is null!");
+            //string logString = string.Join(", ", log);
+            //await Console.Out.WriteLineAsync("userId " + userId + " mit log: " + logString);
 
-            }
+
+            //UserSession session = _sessionService.GetSession(userId);
+            //if (session != null)
+            //{
+
+            //    await Console.Out.WriteLineAsync($"session:  {session.Id} mit token {session.Token} and {session.Username}");
+            //}
+            //else
+            //{
+            //    await Console.Out.WriteLineAsync("session already null");
+            //}
+
+            //if (session.TCPClient != null)
+            //{
+            //    await Console.Out.WriteLineAsync("got from session : " + session.Username);
+            //   await Response(session?.TCPClient, logString);
+
+
+            //}
+            //else
+            //{
+            //    await Console.Out.WriteLineAsync("client is null!");
+
+            //}
             return;
 
         }
 
-        private void Response(TcpClient Client, string? payload = null )
+        private async Task Response(TcpClient Client, string? payload = null )
         {
             if (Client == null)
             {
                 Console.WriteLine("Client is null!\n\n");
+                return;
             }
             else
             {
@@ -149,8 +175,8 @@ namespace MTCG.Services
             {
                 byte[] responseBytes = Encoding.UTF8.GetBytes(fullResponse);
                 NetworkStream stream = Client.GetStream();
-                stream.Write(responseBytes, 0, responseBytes.Length);
-                stream.Flush();
+                await stream.WriteAsync(responseBytes, 0, responseBytes.Length);
+                await stream.FlushAsync();
             }
             catch (ObjectDisposedException)
             {
