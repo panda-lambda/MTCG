@@ -75,7 +75,6 @@ namespace MTCG.Repositories
                       "CardId2 UUID," +
                       "CardId3 UUID," +
                       "CardId4 UUID," +
-                      "CardId5 UUID," +
                       "FOREIGN KEY (CardId1) REFERENCES CARDS(Id)," +
                       "FOREIGN KEY (CardId2) REFERENCES CARDS(Id)," +
                       "FOREIGN KEY (CardId3) REFERENCES CARDS(Id)," +

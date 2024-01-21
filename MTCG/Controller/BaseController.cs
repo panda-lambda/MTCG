@@ -19,7 +19,7 @@ namespace MTCG.Controller
             {
                 action(e);
             }
-            catch (UnauthorizedException ex)
+            catch (UnauthorizedException)
             {
                 e.Reply((int)HttpCodes.UNAUTORIZED, "{\"description\":\"Access token is missing or invalid.\"}");
             }

@@ -25,9 +25,21 @@ namespace MTCG.HttpServer
         /// <summary>Creates a new instance of this class.</summary>
         /// <param name="client">TCP client object.</param>
         /// <param name="plainMessage">HTTP plain message.</param>
+        /// 
+        public HttpSvrEventArgs(TcpClient client)
+        {
+            Console.WriteLine("in http überladeneme kontruktor");
+            _Client = client;
+            PlainMessage = string.Empty;
+            Payload = string.Empty;
+            Headers = new HttpHeader[0];
+            Client = client;
+
+        }
         public HttpSvrEventArgs(TcpClient client, string plainMessage)
         {
             _Client = client;
+            Client = client;
             PlainMessage = plainMessage;
             Payload = string.Empty;
 
@@ -102,6 +114,12 @@ namespace MTCG.HttpServer
             get; protected set;
         }
 
+        /// <summary>Gets the TCP client.</summary>
+        public virtual TcpClient Client
+        {
+            get; protected set;
+        }
+
 
 
         //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -150,7 +168,7 @@ namespace MTCG.HttpServer
                 headers += $"Content-Length: {contentLength}\r\n";
             }
 
-            string fullResponse = statusDescription + headers + "\r\n" + payload+"\r\n\n";
+            string fullResponse = statusDescription + headers + "\r\n" + payload + "\r\n\n";
 
             Console.WriteLine("Full response: " + fullResponse + "\n\n\n------");
 
@@ -158,8 +176,8 @@ namespace MTCG.HttpServer
             {
                 byte[] responseBytes = Encoding.UTF8.GetBytes(fullResponse);
                 NetworkStream stream = _Client.GetStream();
-                 stream.Write(responseBytes, 0, responseBytes.Length);
-                stream.Flush(); 
+                stream.Write(responseBytes, 0, responseBytes.Length);
+                stream.Flush();
             }
             catch (ObjectDisposedException)
             {

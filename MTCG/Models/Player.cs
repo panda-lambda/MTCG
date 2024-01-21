@@ -16,9 +16,10 @@ namespace MTCG.Models
         ///
 
         public Guid Id { get; set; }
-        public UserStats stats { get; set; } = new UserStats(); 
-        public Deck deck { get; set; } = new Deck();  
-        
+
+        public required string Name { get; set; }
+        public required  UserStats Stats { get; set; }  
+        public required Deck Deck { get; set; }         
 
     }
 }

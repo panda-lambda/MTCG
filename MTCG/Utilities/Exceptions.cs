@@ -14,6 +14,7 @@ namespace MTCG.Utilities
     public class UnauthorizedException : Exception
     {
         public UnauthorizedException(string message) : base(message) { }
+        public UnauthorizedException(): base() { }
     }
     public class InsufficientCoinsException : Exception
     {

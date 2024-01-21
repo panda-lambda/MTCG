@@ -149,11 +149,12 @@ namespace MTCG.Services
 
         }
 
-        public bool CheckForValidDeck(HttpSvrEventArgs e)
+        public bool CheckForValidDeck(Guid userId)
         {
-            Guid userId = _sessionService.AuthenticateUserAndSession(e, null);
-
             Deck? deck = _packageAndCardRepository.GetDeckByUser(userId);
+            Console.WriteLine("got deck: "+deck.CardList);
+            Console.WriteLine("coount: "+deck?.CardList?.Count);
+
             if (deck?.CardList?.Count == 4)
             {
                 return true;

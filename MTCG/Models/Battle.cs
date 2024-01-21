@@ -15,10 +15,10 @@ namespace MTCG.Models
         // public properties                                                                                                //
         //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         public Guid BattleID { get; set; }
-        public Player? PlayerOne { set; get; }
-        public Player? PlayerTwo { set; get; }
-        public List<string>? LogPlayerOne { get; set; }
-        public List<string>? LogPlayerTwo { get; set; }
+        public required Player PlayerOne { set; get; }
+        public required Player PlayerTwo { set; get; }
+        public List<string> LogPlayerOne { get; set; } = new();
+        public List<string> LogPlayerTwo { get; set; } = new();
 
         public int Rounds { set; get; } = 0;
         public ResultType? Result { set; get; }

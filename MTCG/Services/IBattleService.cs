@@ -1,4 +1,5 @@
 ﻿using MTCG.HttpServer;
+using MTCG.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,7 +10,9 @@ namespace MTCG.Services
 {
     public interface IBattleService
     {
-        public string? StartBattle(HttpSvrEventArgs e);
+        public void StartBattle(HttpSvrEventArgs e);
+        public UserStats GetUserStats(HttpSvrEventArgs e);
 
+        public List<UserStats> GetScoreboard(HttpSvrEventArgs e);
     }
 }

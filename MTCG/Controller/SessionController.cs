@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using System.IdentityModel.Tokens.Jwt;
 using Microsoft.IdentityModel.Tokens;
 using static System.Collections.Specialized.BitVector32;
+using System.Xml;
 
 namespace MTCG.Controller
 {
@@ -29,13 +30,21 @@ namespace MTCG.Controller
 
         public void AuthenticateAndCreateSession(HttpSvrEventArgs e)
         {
-            Console.WriteLine("in controller authenticate");
+            //Console.WriteLine("in controller authenticate");
             UserCredentials? userCredentials = JsonSerializer.Deserialize<UserCredentials>(e.Payload);
             if (userCredentials != null)
             {
                 try
                 {
-                    string token = _sessionService.AuthenticateAndCreateSession(userCredentials);
+                    if(e.Client == null)
+                    {
+                        Console.WriteLine("client is null in controller auth and create session");
+                    }
+                    else
+                    {
+                        Console.WriteLine("client is NOT null in controller auth and create session");
+                    }
+                    string token = _sessionService.AuthenticateAndCreateSession(userCredentials, e.Client);
                     Console.WriteLine("got token back in sessionscontroller:  \n" + token);
                     if (!(string.IsNullOrEmpty(token)))
                     {
@@ -45,6 +54,9 @@ namespace MTCG.Controller
                     {
                         e.Reply((int)HttpCodes.UNAUTORIZED, "{\"description\":\"Access token is missing or invalid\"}");
                     }
+
+                
+                    
                 }
                 catch (Exception ex)
                 {

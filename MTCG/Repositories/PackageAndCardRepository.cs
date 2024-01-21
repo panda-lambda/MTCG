@@ -27,132 +27,211 @@ namespace MTCG.Repositories
 
         }
 
-       
+
 
 
         public Deck GetDeckByUser(Guid userId)
         {
-
             using var connection = _connectionFactory.CreateConnection();
             try
             {
-
-
                 Deck deck = new Deck();
+                deck.CardList = new List<Card>();
 
-                Console.WriteLine("uid: " + userId.ToString());
                 using (var cmd = connection.CreateCommand())
                 {
-                    List<Guid>? cardIds = new List<Guid>();
-
-                    deck.CardList = new List<Card>();
-
-
-                    cmd.CommandText = $"SELECT Id, Description CardId1, CardId2, CardId3, CardId4 FROM DECKS WHERE OWNERID = :p";
+                    cmd.CommandText = @"
+                SELECT d.Id, d.Description, c.Id, c.Name, c.Damage, c.Locked 
+                FROM Decks d 
+                LEFT JOIN Cards c ON c.Id IN (d.CardId1, d.CardId2, d.CardId3, d.CardId4)
+                WHERE d.OwnerId = :p";
 
                     IDataParameter uid = cmd.CreateParameter();
                     uid.ParameterName = ":p";
                     uid.Value = userId;
                     cmd.Parameters.Add(uid);
 
-
                     using (var reader = cmd.ExecuteReader())
                     {
-                        if (reader.Read())
-                        {
-
-                            deck.Id = reader.GetGuid(0);
-                            if (!reader.IsDBNull(1))
-                            {
-                                deck.Description = reader.GetString(1);
-                            }
-
-                            for (int i = 2; i < 5; i++)
-                            {
-                                if (!reader.IsDBNull(i))
-                                {
-                                    cardIds.Add(reader.GetGuid(i));
-                                }
-                            }
-                        }
-                        else
-                        {
-                            throw new UserHasNoCardsException("The request was fine, but the deck doesn't have any cards");
-                        }
-                    }
-
-                    Console.WriteLine("lesen des decks");
-
-                    cmd.CommandText = "SELECT Id, Name, Damage, Locked FROM Cards WHERE Id IN (";
-
-                    for (int i = 0; i < cardIds.Count; i++)
-                    {
-                        string paramName = "@id" + i;
-                        cmd.CommandText += paramName;
-
-                        // Füge ein Komma hinzu, außer nach dem letzten Parameter
-                        if (i < cardIds.Count - 1)
-                        {
-                            cmd.CommandText += ", ";
-                        }
-
-                        var param = cmd.CreateParameter();
-                        param.ParameterName = paramName;
-                        param.Value = cardIds[i];
-                        cmd.Parameters.Add(param);
-                    }
-
-                    cmd.CommandText += ")";
-
-                    using (var reader = cmd.ExecuteReader())
-
-                    {
-                        Console.WriteLine("nach execture reader select");
                         while (reader.Read())
                         {
-                            Card card = new Card();
-
-                            card.Id = reader.GetGuid(0);
-                            if (Enum.TryParse<FactionType>(reader.GetString(1), out FactionType type))
+                            if (deck.Id == Guid.Empty)
                             {
-                                card.Name = type;
-                            }
-                            else
-                            {
-                                throw new InternalServerErrorException("could not convert factiontype to enum");
+                                deck.Id = reader.GetGuid(0);
+                                deck.Description = reader.IsDBNull(1) ? string.Empty : reader.GetString(1);
                             }
 
-                            card.Damage = reader.GetFloat(2);
-                            card.Locked = reader.GetBoolean(3);
+                            if (!reader.IsDBNull(2)) // Check if there's a card
+                            {
+                                Card card = new Card
+                                {
+                                    Id = reader.GetGuid(2),
+                                    Damage = reader.GetFloat(4),
+                                    Locked = reader.GetBoolean(5)
+                                };
 
-                            deck.CardList.Add(card);
+                                string nameString = reader.GetString(3);
+                                if (Enum.TryParse<FactionType>(nameString, out FactionType type))
+                                {
+                                    card.Name = type;
+                                }
+                                else
+                                {
+                                    throw new InternalServerErrorException("Could not convert faction type to enum");
+                                }
+
+                                deck.CardList.Add(card);
+                            }
                         }
-                        if (deck.CardList.Count < 1)
-                        {
-                            throw new InvalidCardCountInDeck("invalid card count in deck");
+
+                            if (deck.CardList.Count < 1)
+                            {
+                                throw new InvalidCardCountInDeck("Invalid card count in deck");
+                            }
                         }
-
-
                     }
 
+                    return deck;
                 }
-                return deck;
-            }
             catch (UserHasNoCardsException)
             {
                 throw;
             }
-
             catch (InvalidCardCountInDeck)
             {
                 throw;
             }
             catch (Exception ex)
             {
-                throw new InternalServerErrorException(ex.Message + " in GetCrdsbyuser repository");
+                throw new InternalServerErrorException(ex.Message + " in GetDeckByUser repository");
             }
-        }
 
+
+            //    using var connection = _connectionFactory.CreateConnection();
+            //    try
+            //    {
+
+
+            //        Deck deck = new Deck();
+
+            //        Console.WriteLine("uid: " + userId.ToString());
+            //        using (var cmd = connection.CreateCommand())
+            //        {
+            //            List<Guid>? cardIds = new List<Guid>();
+
+            //            deck.CardList = new List<Card>();
+
+
+            //            cmd.CommandText = $"SELECT Id, Description CardId1, CardId2, CardId3, CardId4 FROM DECKS WHERE OWNERID = :p";
+
+            //            IDataParameter uid = cmd.CreateParameter();
+            //            uid.ParameterName = ":p";
+            //            uid.Value = userId;
+            //            cmd.Parameters.Add(uid);
+
+
+            //            using (var reader = cmd.ExecuteReader())
+            //            {
+            //                if (reader.Read())
+            //                {
+
+            //                    deck.Id = reader.GetGuid(0);
+            //                    if (!reader.IsDBNull(1))
+            //                    {
+            //                        deck.Description = reader.GetString(1);
+            //                    }
+
+            //                    for (int i = 2; i < 5; i++)
+            //                    {
+            //                        if (!reader.IsDBNull(i))
+            //                        {
+            //                            cardIds.Add(reader.GetGuid(i));
+            //                        }
+            //                    }
+            //                }
+            //                else
+            //                {
+            //                    throw new UserHasNoCardsException("The request was fine, but the deck doesn't have any cards");
+            //                }
+            //            }
+
+            //            Console.WriteLine("lesen des decks");
+
+            //            cmd.CommandText = "SELECT Id, Name, Damage, Locked FROM Cards WHERE Id IN (";
+
+            //            for (int i = 0; i < cardIds.Count; i++)
+            //            {
+            //                string paramName = "@id" + i;
+            //                cmd.CommandText += paramName;
+
+            //                // Füge ein Komma hinzu, außer nach dem letzten Parameter
+            //                if (i < cardIds.Count - 1)
+            //                {
+            //                    cmd.CommandText += ", ";
+            //                }
+
+            //                var param = cmd.CreateParameter();
+            //                param.ParameterName = paramName;
+            //                param.Value = cardIds[i];
+            //                cmd.Parameters.Add(param);
+            //            }
+
+            //            cmd.CommandText += ")";
+
+            //            using (var reader = cmd.ExecuteReader())
+
+            //            {
+            //                Console.WriteLine("nach execture reader select");
+            //                while (reader.Read())
+            //                {
+            //                    Card card = new Card();
+
+            //                    card.Id = reader.GetGuid(0);
+            //                    if (Enum.TryParse<FactionType>(reader.GetString(1), out FactionType type))
+            //                    {
+            //                        card.Name = type;
+            //                    }
+            //                    else
+            //                    {
+            //                        throw new InternalServerErrorException("could not convert factiontype to enum");
+            //                    }
+
+            //                    card.Damage = reader.GetFloat(2);
+            //                    card.Locked = reader.GetBoolean(3);
+
+            //                    deck.CardList.Add(card);
+            //                }
+            //                if (deck.CardList.Count < 1)
+            //                {
+            //                    throw new InvalidCardCountInDeck("invalid card count in deck");
+            //                }
+
+
+            //            }
+            //            Console.WriteLine("in package_repo card list in deck");
+            //            foreach (Card card in deck.CardList)
+            //            {
+            //                Console.WriteLine(card.Id);
+            //            }
+
+            //        }
+            //        return deck;
+            //    }
+            //    catch (UserHasNoCardsException)
+            //    {
+            //        throw;
+            //    }
+
+            //    catch (InvalidCardCountInDeck)
+            //    {
+            //        throw;
+            //    }
+            //    catch (Exception ex)
+            //    {
+            //        throw new InternalServerErrorException(ex.Message + " in GetCrdsbyuser repository");
+            //    }
+            //}
+        }
 
         public List<Card>? GetCardsByUser(Guid userId)
         {
@@ -529,7 +608,7 @@ namespace MTCG.Repositories
             {
                 using (var connection = _connectionFactory.CreateConnection())
                 {
-                    Console.WriteLine( "in configure deck");
+                    Console.WriteLine("in configure deck");
 
                     using (var cmd = connection.CreateCommand())
                     {
@@ -549,7 +628,7 @@ namespace MTCG.Repositories
                         idP.Value = newId;
                         cmd.Parameters.Add(idP);
 
-                        IDbDataParameter ownerP = cmd.CreateParameter(); 
+                        IDbDataParameter ownerP = cmd.CreateParameter();
                         ownerP.ParameterName = ":owner";
                         ownerP.Value = user;
                         cmd.Parameters.Add(ownerP);
@@ -565,7 +644,7 @@ namespace MTCG.Repositories
                         cmd.ExecuteNonQuery();
                     }
                 }
-                return true; 
+                return true;
 
 
 
@@ -583,7 +662,7 @@ namespace MTCG.Repositories
                 return false;
             }
 
-            
+
 
         }
     }

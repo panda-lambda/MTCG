@@ -29,55 +29,44 @@ namespace MTCG.Controller
         {
             if (e.Path.StartsWith("/stats") && e.Method == "GET")
             {
-                GetStatsByUser(e);
+                ExecuteWithExceptionHandling(e, GetStatsByUser);
             }
 
             if (e.Path.StartsWith ("/scoreboard") && e.Method == "GET") {
-                GetSortedStatsByELO(e);
+                ExecuteWithExceptionHandling(e, GetScoreboard);
             }
             if (e.Path.StartsWith("/battles") && e.Method == "POST")
             {
                 ExecuteWithExceptionHandling(e, StartBattle);
-                e.Reply((int)HttpCodes.OK, "the battle log");
-                e.Reply((int)HttpCodes.UNAUTORIZED, "{\"description\":\"Access token is missing or invalid\"}");
+                //e.Reply((int)HttpCodes.OK, "the battle log\n\n");
+            }
+        }
+        
+        private void GetScoreboard(HttpSvrEventArgs e)
+        {
+            List<UserStats> scoreboard = _battleService.GetScoreboard(e);
+            if (scoreboard == null)
+            {
+                throw new InternalServerErrorException("scoreboard has no entries");
 
             }
+            //obviously admin should be excluded from the scoreboard,should use user roles, but test script & yaml lack definition
+            scoreboard.RemoveAll(stat => stat.Name.StartsWith("admin")); 
+            e.Reply((int)HttpCodes.OK, System.Text.Json.JsonSerializer.Serialize(scoreboard));
+
         }
 
         private void StartBattle(HttpSvrEventArgs e)
         {
-           string? logs = _battleService.StartBattle(e);
-            if (logs == null)
-            {
-                throw new InternalServerErrorException("something went wrong while starting the battle");
-
-            }
-            
+            _battleService.StartBattle(e);
+           
         }
         private void GetStatsByUser(HttpSvrEventArgs e)
         {
-            
-            e.Reply((int)HttpCodes.OK, "content");
-        //description: The stats could be retrieved successfully.
-        //  content:
-        //    application / json:
-        //      schema:
-        //        $ref: '#/components/schemas/UserStats'
-            e.Reply((int)HttpCodes.UNAUTORIZED, "{\"description\":\"Access token is missing or invalid\"}");
+            UserStats userStats = _battleService.GetUserStats(e);
+            e.Reply((int)HttpCodes.OK, System.Text.Json.JsonSerializer.Serialize(userStats, JsonOptions.DefaultOptions));
 
         }
-        private void GetSortedStatsByELO(HttpSvrEventArgs e)
-        {
-            e.Reply((int)HttpCodes.OK, "content");
 
-            //    '200':
-            //  description: The scoreboard could be retrieved successfully.
-            //  content:
-            //    application / json:
-            //      schema:
-            //type: array
-            //items:
-            //          $ref: '#/components/schemas/UserStats'
-        }
     }
 }

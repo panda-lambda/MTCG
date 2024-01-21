@@ -23,6 +23,10 @@ namespace MTCG.Repositories
 
         public bool UpdateUserData(Guid userId, UserData userData);
 
+        public UserStats GetUserStats(Guid userId);
+        public List<UserStats>? GetScoreboard();
+
+
 
 
     }

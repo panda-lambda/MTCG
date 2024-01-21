@@ -50,6 +50,9 @@ internal class Program
          .AddScoped<IPackageAndCardService, PackageAndCardService>()
          .AddScoped<ITradingService, TradingService>()
          .AddScoped<IDatabaseHelperService, DatabaseHelperService>()
+         .AddScoped<IBattleService, BattleService>()
+         .AddScoped <IBattleLogicService, BattleLogicService>()
+         .AddScoped <ISessionServiceWithSessions, SessionService>()
          .AddTransient<UserController>()
          .AddTransient<SessionController>()
          .AddTransient<PackageAndCardController>()
@@ -130,7 +133,7 @@ internal class Program
         {
             return typeof(PackageAndCardController);
         }
-        else if (path.StartsWith("/battles"))
+        else if (path.StartsWith("/battles") || path.StartsWith("/stats") || path.StartsWith("/scoreboard"))
         {
             return typeof(BattleController);
         }

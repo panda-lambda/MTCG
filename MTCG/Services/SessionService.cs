@@ -7,20 +7,23 @@ using MTCG.Utilities;
 using System;
 using System.Collections.Concurrent;
 using System.IdentityModel.Tokens.Jwt;
+using System.Net.Sockets;
+using System.Reflection.PortableExecutable;
 using System.Security.Cryptography;
 using System.Text;
 
 
 namespace MTCG.Services
 {
-    public class SessionService : ISessionService
+    public class SessionService : ISessionService,ISessionServiceWithSessions
     {
         private readonly UserRepository? _userRepository;
         private readonly SessionRepository? _sessionRepository;
         private readonly ConcurrentDictionary<Guid, UserSession> _sessions;
-        
+
         private readonly string? _key;
-        private const int KeySize = 32;  
+        private readonly bool _inDebugMode;
+        private const int KeySize = 32;
 
 
         public SessionService(ISessionRepository sessionRepository, IUserRepository userRepository, IConfiguration configuration)
@@ -28,8 +31,13 @@ namespace MTCG.Services
             _sessionRepository = (SessionRepository?)sessionRepository;
             _userRepository = (UserRepository?)userRepository;
             _sessions = new ConcurrentDictionary<Guid, UserSession>();
-            
+
             _key = configuration["AppSettings:SecretKey"] ?? throw new InvalidOperationException("JWT Secret Key is not configured properly.");
+            string? debugConfig = configuration["AppSettings:Debug"];
+            if (!string.IsNullOrEmpty(debugConfig))
+            {
+                bool.TryParse(debugConfig, out _inDebugMode);
+            }
         }
         public Guid AuthenticateUserAndSession(HttpSvrEventArgs e, string? username)
         {
@@ -38,23 +46,24 @@ namespace MTCG.Services
                 string? token = e.Headers?.FirstOrDefault(header => header.Name == "Authorization")?.Value;
                 if (token == null)
                 {
-                    throw new UnauthorizedException("in authenticateUserAndSession - SessionService");
+                    if (_inDebugMode) Console.WriteLine("EXEption in in authenticateUserAndSession - SessionService");
+                    throw new UnauthorizedException();
 
                 }
                 Guid? userId = ValidateToken(token);
-                Console.WriteLine("userid: " + userId);
                 if (userId == null || !userId.HasValue)
                 {
-                    Console.WriteLine("userId is null in authenticateuserandsesion in session servioce");
-                    throw new UnauthorizedException("in authenticateUserAndSession - SessionService");
+                    if (_inDebugMode) Console.WriteLine("userId is null in authenticateuserandsesion in session servioce");
+                    throw new UnauthorizedException();
                 }
 
                 UserSession? session = GetSession((Guid)userId);
-                
+
 
                 if (session == null || username != null && session?.Username != username)
                 {
-                    throw new UnauthorizedException("username not matching in  authenticateUserAndSession - SessionService");
+                    if (_inDebugMode) Console.WriteLine("username not matching in authenticateUserAndSession - SessionService");
+                    throw new UnauthorizedException();
                 }
                 if (session.IsFighting)
                 {
@@ -73,22 +82,45 @@ namespace MTCG.Services
             }
         }
 
-        public string AuthenticateAndCreateSession(UserCredentials userCredentials)
+        public string AuthenticateAndCreateSession(UserCredentials userCredentials, TcpClient client)
         {
-            //Console.WriteLine("im sessionservice");
-            UserCredentials? user = _userRepository?.GetHashByUsername(userCredentials.Username);
-
-            if (user == null || string.IsNullOrEmpty(user.Password) || !(user.Id.HasValue) ||  !VerifyPassword(userCredentials.Password, user.Password))
+            try
             {
-                return string.Empty;
-            }
-            //Console.WriteLine($"User {user.Username} with hased pw: {user.Password}");
 
-            return CreateSession((Guid)user.Id, userCredentials.Username);
+                if(client == null)
+                {
+                    Console.WriteLine(" client is NULL in auth and create session");
+                }
+                else
+                {
+                    Console.WriteLine("client is NOT NUll in auth and create session");
+                }
+                UserCredentials? user = _userRepository?.GetHashByUsername(userCredentials.Username);
+                if (user == null || user.Username == null)
+                {
+                    throw new UserNotFoundException("");
+                }
+
+                if (string.IsNullOrEmpty(user.Password) || !(user.Id.HasValue) || !VerifyPassword(userCredentials.Password, user.Password))
+                {
+                    throw new UnauthorizedException();
+                }
+                Console.WriteLine($"User {user.Username} with hased pw: {user.Password}");
+                return CreateSession((Guid)user.Id, userCredentials.Username, client);
+            }
+          catch(Exception e)
+            {
+                Console.WriteLine("something wnent wrong in authenticae and create session");
+                Console.WriteLine(e.Message        );
+                return ""; 
+            }
+
+
+
         }
 
 
-        internal string CreateSession(Guid userId, string username)
+        internal string CreateSession(Guid userId, string username, TcpClient client)
         {
             Guid sessionId = Guid.NewGuid();
             long createdAt = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
@@ -96,8 +128,15 @@ namespace MTCG.Services
             string token = GenerateJwtToken(userId, username);
             Console.WriteLine($"Sessioncreated at {createdAt} and expires at {expiresAt}");
 
-            var session = new UserSession { Id = sessionId, Username = username, Token = token, CreatedAt = createdAt, ExpiresAt = expiresAt };
-
+            var session = new UserSession { Id = sessionId, Username = username, Token = token, CreatedAt = createdAt, ExpiresAt = expiresAt, TCPClient = client };
+            if (session.TCPClient != null)
+            {
+                Console.WriteLine("client in createSession NOT NULL!\n\n\n");
+            }
+            else
+            {
+                Console.WriteLine("client in createSession IS NULL!\n\n\n");
+            }
             _sessions.TryAdd(userId, session);
             return session.Token;
 
@@ -249,25 +288,32 @@ namespace MTCG.Services
             return _sessions.TryRemove(userId, out _);
         }
 
-        private UserSession? GetSession(Guid userId)
+       public UserSession? GetSession(Guid userId)
         {
             _ = _sessions.TryGetValue(userId, value: out UserSession? session);
 
             return session;
         }
 
+        public TcpClient? GetClientFromSession (Guid userId)
+        {
+            _ = _sessions.TryGetValue(userId, value: out UserSession? session);
 
-        public string? GetUsernameFromSession (Guid userId)
+            return session?.TCPClient;
+        }
+
+
+        public string? GetUsernameFromSession(Guid userId)
         {
             _ = _sessions.TryGetValue(userId, value: out UserSession? session);
             return session?.Username;
 
         }
-        public void SetFightingState (Guid userId, bool isFighting)
+        public void SetFightingState(Guid userId, bool isFighting)
         {
             _ = _sessions.TryGetValue(userId, value: out UserSession? session);
             if (session != null)
-            session.IsFighting = isFighting;
-        }   
+                session.IsFighting = isFighting;
+        }
     }
 }

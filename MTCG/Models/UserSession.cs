@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -20,6 +21,7 @@ namespace MTCG.Models
         public long CreatedAt { get; set; }
         public long ExpiresAt { get; set; }
         public bool IsFighting { get; set; } = false;
+        public TcpClient? TCPClient { get; set; }
 
 
 

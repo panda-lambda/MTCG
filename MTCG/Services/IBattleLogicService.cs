@@ -7,8 +7,8 @@ using System.Threading.Tasks;
 
 namespace MTCG.Services
 {
-    public interface IGameService
+    public interface IBattleLogicService
     {
-        public void AddPlayer(Player player);
+        Task<Battle> ExecuteBattle(Battle battle);
     }
 }

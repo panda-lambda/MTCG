@@ -26,6 +26,130 @@ namespace MTCG.Repositories
 
         }
 
+        public UserStats GetUserStats(Guid userId)
+        {
+            using (var connection = _connectionFactory.CreateConnection())
+            {
+                try
+                {
+                    using (var cmd = connection.CreateCommand())
+                    {
+                        cmd.CommandText = "SELECT * FROM USERSTATS WHERE ID= :n";
+                        IDataParameter n = cmd.CreateParameter();
+                        n.ParameterName = ":n";
+                        n.Value = userId;
+                        cmd.Parameters.Add(n);
+
+                        using (var reader = cmd.ExecuteReader())
+                        {
+                            if (reader.Read())
+                            {
+                                _ = reader.GetGuid(0);
+                                string name = reader.GetString(1);
+                                int elo = reader.GetInt32(2);
+                                int wins = reader.GetInt32(3);
+                                int losses = reader.GetInt32(4);
+
+
+                                return new UserStats
+                                {
+                                    Name = name,
+                                    Elo = elo,
+                                    Wins = wins,
+                                    Losses = losses
+                                };
+                            }
+                        }
+                    }
+                    return null;
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex.Message);
+                    Console.WriteLine("exception in userrepository getting hashed pw");
+
+                }
+                return null;
+
+            }
+        }
+
+        public string GetNameByGuid(Guid? userId)
+        {
+            using (var connection = _connectionFactory.CreateConnection())
+            {
+                try
+                {
+                    using (var cmd = connection.CreateCommand())
+                    {
+                        cmd.CommandText = "SELECT NAME FROM USERS WHERE ID= :n";
+                        IDataParameter n = cmd.CreateParameter();
+                        n.ParameterName = ":n";
+                        n.Value = userId;
+                        cmd.Parameters.Add(n);
+
+                        using (var reader = cmd.ExecuteReader())
+                        {
+                            if (reader.Read())
+                            {
+                                string name = reader.GetString(0);
+                                return name;
+                            }
+                        }
+                    }
+                    return String.Empty;
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex.Message);
+                    Console.WriteLine("exception in userrepository getting hashed pw");
+
+                }
+                return String.Empty;
+
+            }
+        }           
+
+
+
+        public List<UserStats>? GetScoreboard()
+        {
+            using (var connection = _connectionFactory.CreateConnection())
+            {
+                try
+                {
+                    using (var cmd = connection.CreateCommand())
+                    {
+                        List<UserStats> scoreboard = new();
+                        cmd.CommandText = "SELECT * FROM USERSTATS ORDER BY ELO DESC";
+                        using (var reader = cmd.ExecuteReader())
+                        {
+                            while (reader.Read())
+                            {
+                                var userStats = new UserStats
+                                {
+                                    Id = reader.GetGuid(0),
+                                    Name = reader.GetString(1),
+                                    Elo = reader.GetInt32(2),
+                                    Wins = reader.GetInt32(3),
+                                    Losses = reader.GetInt32(4)
+                                };
+                                scoreboard.Add(userStats);
+                            }
+                        }
+                        return scoreboard;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex.Message);
+                    Console.WriteLine("exception in userrepository getting hashed pw");
+
+                }
+                return null;
+
+            }
+        }
 
         public UserCredentials? GetHashByUsername(string username)
         {
@@ -150,8 +274,8 @@ namespace MTCG.Repositories
                 {
                     using (var cmd = connection.CreateCommand())
                     {
-                       
-                   cmd.CommandText = @"
+
+                        cmd.CommandText = @"
              INSERT INTO USERDATA(Id, Name, Bio, Image)
              VALUES(:id, :name, :bio, :img)
              ON CONFLICT(Id) DO UPDATE
@@ -370,7 +494,7 @@ namespace MTCG.Repositories
 
                         k = cmd.CreateParameter();
                         k.ParameterName = ":k";
-                        k.Value = 0;
+                        k.Value = 1000;
                         cmd.Parameters.Add(k);
 
                         k = cmd.CreateParameter();

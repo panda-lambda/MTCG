@@ -7,8 +7,8 @@ using System.Threading.Tasks;
 
 namespace MTCG.Services
 {
-    public interface IGameService
+    public interface ISessionServiceWithSessions:ISessionService
     {
-        public void AddPlayer(Player player);
+        public UserSession GetSession(Guid sessionId);
     }
 }
