@@ -13,6 +13,7 @@ namespace MTCG.Services
         internal bool CreateUser(string username, string password);
 
         public UserData? GetUserData(HttpSvrEventArgs e);
+        public bool UpdateUserData(HttpSvrEventArgs e);
 
     }
 }

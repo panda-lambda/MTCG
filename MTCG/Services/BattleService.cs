@@ -44,8 +44,8 @@ namespace MTCG.Services
 
         private bool CheckForValidDeck(HttpSvrEventArgs e)
         {
-
-            return (bool)_packageService.CheckForValidDeck(e);
+            
+            return (_packageService !=null && (bool)_packageService.CheckForValidDeck(e));
         }
 
     }

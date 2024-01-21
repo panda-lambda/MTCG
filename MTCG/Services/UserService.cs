@@ -8,6 +8,7 @@ using System.Security.Cryptography;
 using System.Text;
 using MTCG.Utilities;
 using Microsoft.IdentityModel.Tokens;
+using Newtonsoft.Json;
 
 
 namespace MTCG.Services
@@ -19,12 +20,12 @@ namespace MTCG.Services
         private const int SaltSize = 16; // 128 bit 
         private const int KeySize = 32;  // 256 bit
         private const int Iterations = 10000;  // iterations
-        
+
 
         public UserService(IUserRepository userRepository, ISessionService sessionService)
         {
             _userRepository = (UserRepository?)userRepository ?? throw new ArgumentNullException(nameof(userRepository));
-            _sessionService = (SessionService?)sessionService ?? throw new ArgumentNullException(nameof(sessionService));   
+            _sessionService = (SessionService?)sessionService ?? throw new ArgumentNullException(nameof(sessionService));
         }
 
         internal static string HashPassword(string password)
@@ -65,7 +66,36 @@ namespace MTCG.Services
             }
         }
 
-        
+        public bool UpdateUserData(HttpSvrEventArgs e)
+        {
+            string? usernameClaim = e.Path.Replace("/users/", "");
+            Guid? userId = _sessionService?.AuthenticateUserAndSession(e, usernameClaim);
+            if (usernameClaim == null || userId == null && usernameClaim != "admin")
+            {
+                throw new UnauthorizedAccessException();
+            }
+            if (usernameClaim == "admin")
+            {
+                 userId = _sessionService?.AuthenticateUserAndSession(e, null);
+            }
+            if (userId == Guid.Empty || userId == null)
+            {
+                throw new UnauthorizedAccessException();
+            }
+
+
+            UserData? userData = JsonConvert.DeserializeObject<UserData>(e.Payload);
+            if (userData == null)
+            {
+                throw new NoNullAllowedException();
+            }
+            if (_userRepository != null && _userRepository.UpdateUserData((Guid)userId, userData))
+                return true;
+            else
+                return false;
+
+        }
+
 
         public UserData? GetUserData(HttpSvrEventArgs e)
         {
@@ -76,18 +106,18 @@ namespace MTCG.Services
                 throw new UnauthorizedAccessException();
             }
             string usernameClaim = e.Path.Replace("/users/", "");
-           string? userNameInSession = _sessionService?.GetUsernameFromSession((Guid)userId);
+            string? userNameInSession = _sessionService?.GetUsernameFromSession((Guid)userId);
             if (userNameInSession.IsNullOrEmpty() || usernameClaim != userNameInSession)
             {
                 throw new UnauthorizedAccessException();
             }
-           return  _userRepository?.GetUserData((Guid)userId);
-
-            
+            return _userRepository?.GetUserData((Guid)userId);
 
 
 
-            
+
+
+
         }
 
 

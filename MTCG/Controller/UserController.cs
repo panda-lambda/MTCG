@@ -32,7 +32,7 @@ namespace MTCG.Controller
                 case "PUT":
                     if (e.Path.StartsWith("/users/"))
                     {
-                        // UpdateUserData(e);
+                        ExecuteWithExceptionHandling(e, UpdateUserData);
                     }
                     break;
                 case "GET":
@@ -40,7 +40,7 @@ namespace MTCG.Controller
                     {
                         ExecuteWithExceptionHandling(e, GetUserData);
                     }
-                        break;
+                    break;
                 default:
                     e.Reply((int)HttpCodes.BAD_REQUEST, "{\"msg\":\"Not a valid Http Request!\"}");
                     break;
@@ -84,18 +84,26 @@ namespace MTCG.Controller
 
         internal void GetUserData(HttpSvrEventArgs e)
         {
-            
-            string username = e.Path.Replace("/users/", "");
-            Console.WriteLine("username " + username);
+
             UserData? userData = _userService.GetUserData(e);
             if (userData == null)
             {
                 throw new UserNotFoundException("User not found");
             }
 
-            e.Reply((int)HttpCodes.OK, System.Text.Json.JsonSerializer.Serialize(userData, JsonOptions.NullOptions));          
+            e.Reply((int)HttpCodes.OK, System.Text.Json.JsonSerializer.Serialize(userData, JsonOptions.NullOptions));
         }
 
+
+        internal void UpdateUserData(HttpSvrEventArgs e)
+        {
+
+            if (_userService.UpdateUserData(e))
+            {
+                e.Reply((int)HttpCodes.OK, "{\"msg\":\"User sucessfully updated.\"}");
+            }
+
+        }
 
     }
 }

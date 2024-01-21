@@ -21,6 +21,7 @@ namespace MTCG.Models
         public string? Bio { get; set; }
         public string? Image { get; set; }
 
+        [JsonIgnore]
         public int Coins { get; set; } = 20;
     }
 

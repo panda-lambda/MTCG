@@ -142,6 +142,60 @@ namespace MTCG.Repositories
             }
         }
 
+        public bool UpdateUserData(Guid userId, UserData userData)
+        {
+            using (var connection = _connectionFactory.CreateConnection())
+            {
+                try
+                {
+                    using (var cmd = connection.CreateCommand())
+                    {
+                       
+                   cmd.CommandText = @"
+             INSERT INTO USERDATA(Id, Name, Bio, Image)
+             VALUES(:id, :name, :bio, :img)
+             ON CONFLICT(Id) DO UPDATE
+           SET Name = CASE WHEN EXCLUDED.Name IS NOT NULL THEN EXCLUDED.Name ELSE USERDATA.Name END, 
+        Bio = CASE WHEN EXCLUDED.Bio IS NOT NULL THEN EXCLUDED.Bio ELSE USERDATA.Bio END, 
+        Image = CASE WHEN EXCLUDED.Image IS NOT NULL THEN EXCLUDED.Image ELSE USERDATA.Image END";
+
+                        IDbDataParameter idP = cmd.CreateParameter();
+                        idP.ParameterName = ":id";
+                        idP.Value = userId;
+                        cmd.Parameters.Add(idP);
+
+                        IDbDataParameter name = cmd.CreateParameter();
+                        name.ParameterName = ":name";
+                        name.Value = userData.Name;
+                        cmd.Parameters.Add(name);
+
+                        IDbDataParameter bio = cmd.CreateParameter();
+                        bio.ParameterName = ":bio";
+                        bio.Value = userData.Bio;
+                        cmd.Parameters.Add(bio);
+
+                        IDbDataParameter img = cmd.CreateParameter();
+                        img.ParameterName = ":img";
+                        img.Value = userData.Image;
+                        cmd.Parameters.Add(img);
+
+                        cmd.ExecuteNonQuery();
+
+                        Console.WriteLine("user updated");
+                        Console.WriteLine(userData);
+
+                        return true;
+                    }
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine("Exeption in UserRepository UpdateUserdata:");
+                    Console.WriteLine(e.Message);
+                    return false;
+                }
+
+            }
+        }
 
         public Guid? GetGuidByUserName(string userName)
         {
@@ -200,7 +254,7 @@ namespace MTCG.Repositories
                                 string name = reader.GetString(1);
                                 string? bio = null;
                                 string? img = null;
-                                    int coins = 0;
+                                int coins = 0;
 
                                 if (!reader.IsDBNull(2))
                                 {
@@ -215,7 +269,7 @@ namespace MTCG.Repositories
                                 {
                                     coins = reader.GetInt32(4);
                                 }
-                                Console.WriteLine("coins hat "+ coins + " !");
+                                Console.WriteLine("coins hat " + coins + " !");
                                 return new UserData
                                 {
                                     Name = name,
