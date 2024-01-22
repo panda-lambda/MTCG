@@ -47,7 +47,7 @@ namespace MTCG.Repositories
                 {
                     using (var cmd = connection.CreateCommand())
                     {
-                        cmd.CommandText = "CREATE TABLE IF NOT EXISTS USERS (id UUID PRIMARY KEY, name VARCHAR(255), password VARCHAR(255))";
+                        cmd.CommandText = "CREATE TABLE IF NOT EXISTS USERS (id UUID PRIMARY KEY, name VARCHAR(255) UNIQUE, password VARCHAR(255))";
                         cmd.ExecuteNonQuery();
 
                         cmd.CommandText = "CREATE TABLE IF NOT EXISTS USERDATA (Id UUID PRIMARY KEY, Name VARCHAR(55), Bio VARCHAR(255), Image VARCHAR(50), Coins INTEGER)";
@@ -62,7 +62,8 @@ namespace MTCG.Repositories
                  " Damage DECIMAL(7, 2)," +
                  " Type VARCHAR(50)," +
                  " Locked BOOLEAN ," +
-                 " Element VARCHAR(50)   ," +
+                 " Element VARCHAR(50)," +
+                 " Monster VARCHAR(50), " +
                  "OwnerId UUID REFERENCES Users(Id))";
                         cmd.ExecuteNonQuery();
 

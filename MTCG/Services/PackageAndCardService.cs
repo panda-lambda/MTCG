@@ -190,13 +190,38 @@ namespace MTCG.Services
                 {
                     throw new Exception(" no card in package in service");
                 }
-                foreach (Card card in cardPackage.CardList)
+                //foreach (Card card in cardPackage.CardList)
+                //{
+                //    if (card.Name.ToString().StartsWith("Fire"))
+                //        card.Element = ElementType.Fire;
+                //    else if (card.Name.ToString().StartsWith("Water"))
+                //        card.Element = ElementType.Water;
+                //    else if (card.Name.ToString().StartsWith("Regular"))
+                //        card.Element = ElementType.Normal;
+                //    else if (card.Name.ToString().StartsWith("Earth"))
+                //        card.Element = ElementType.Earth;
+                //    else if (card.Name.ToString().StartsWith("Dark"))
+                //        card.Element = ElementType.Dark;
+                //    else if (card.Name.ToString().StartsWith("Light"))
+                //        card.Element = ElementType.Light;
+                //    else card.Element = ElementType.Normal;
+
+                //    if (card.Name.ToString().EndsWith("Elf" ))
+                //        card.Monster = MonsterType.Elf;
+                //}
+
+                foreach (Card card in cardPackage.CardList)               
                 {
-                    if (card.Name.ToString().StartsWith("Fire"))
-                        card.Element = ElementType.Fire;
-                    if (card.Name.ToString().StartsWith("Water"))
-                        card.Element = ElementType.Water;
+                    card.Element = EnumHelper.GetEnumByNameFront<ElementType>(card.Name.ToString());
+                    card.Monster = EnumHelper.GetEnumByNameEnd<MonsterType>(card.Name.ToString());
+                    card.Type = EnumHelper.GetEnumByNameEnd<CardType>(card.Name.ToString());
+                               
+
+             
                 }
+
+
+
                 for (int i = 0; i < cardPackage.CardList?.Count; i++)
                 {
 

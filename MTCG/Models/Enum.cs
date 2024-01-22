@@ -9,16 +9,29 @@ namespace MTCG.Models
     public enum CardType
     {
         /// <summary>This enum provides the card type.</summary>
-
+        None,
         Monster,
         Spell,
-        Trap
+        
     }
 
+
+    public enum MonsterType
+    {
+        None,
+        Elf, 
+        Ork,
+        Dragon, 
+        Knight,
+        Troll, 
+        Goblin,
+        Kraken, 
+        Wizard
+    }
     public enum ElementType
     {
         /// <summary>This enum provides the element type of a card.</summary>
-
+        None,
         Normal,
         Fire,
         Water,

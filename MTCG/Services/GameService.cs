@@ -22,7 +22,7 @@ namespace MTCG.Services
 
         private IBattleLogicService _battleLogicService;
         private readonly object queueLock = new object();
-        private ISessionServiceWithSessions _sessionService;
+        private ISessionService _sessionService;
 
         public GameService(IBattleLogicService battleLogicService, ISessionService sessionService)
         {
@@ -50,10 +50,8 @@ namespace MTCG.Services
                 }
                 if (playerQueue.Count >= 2)
                 {
-                    if (playerQueue.TryDequeue(out Player playerOne) && playerQueue.TryDequeue(out Player playerTwo))
+                    if (playerQueue.TryDequeue(out Player? playerOne) && playerQueue.TryDequeue(out Player? playerTwo))
                     {
-                        //Console.WriteLine("got player one: " + playerOne.Name);
-                        //Console.WriteLine("and player two: " + playerTwo.Name);
                         var battle = new Battle
                         {
                             BattleID = Guid.NewGuid(),
@@ -112,85 +110,11 @@ namespace MTCG.Services
 
 
                 e.Reply((int)HttpCodes.OK, JsonConvert.SerializeObject(logString));
-            }
-            
+            }       
 
 
-            //string logString = string.Join(", ", log);
-            //await Console.Out.WriteLineAsync("userId " + userId + " mit log: " + logString);
-
-
-            //UserSession session = _sessionService.GetSession(userId);
-            //if (session != null)
-            //{
-
-            //    await Console.Out.WriteLineAsync($"session:  {session.Id} mit token {session.Token} and {session.Username}");
-            //}
-            //else
-            //{
-            //    await Console.Out.WriteLineAsync("session already null");
-            //}
-
-            //if (session.TCPClient != null)
-            //{
-            //    await Console.Out.WriteLineAsync("got from session : " + session.Username);
-            //   await Response(session?.TCPClient, logString);
-
-
-            //}
-            //else
-            //{
-            //    await Console.Out.WriteLineAsync("client is null!");
-
-            //}
             return;
 
-        }
-
-        private async Task Response(TcpClient Client, string? payload = null )
-        {
-            if (Client == null)
-            {
-                Console.WriteLine("Client is null!\n\n");
-                return;
-            }
-            else
-            {
-                Console.WriteLine("client is not nuLL\n\n");
-            }
-            string statusDescription;
-            statusDescription = "HTTP/1.1 200 OK\r\n";
-            string headers = "Content-Type: application/json\r\n";
-            if (!string.IsNullOrEmpty(payload))
-            {
-                int contentLength = Encoding.UTF8.GetByteCount(payload);
-                headers += $"Content-Length: {contentLength}\r\n";
-            }
-
-            string fullResponse = statusDescription + headers + "\r\n" + payload + "\r\n\n";
-
-            Console.WriteLine("Full response: " + fullResponse + "\n\n\n------");
-
-            try
-            {
-                byte[] responseBytes = Encoding.UTF8.GetBytes(fullResponse);
-                NetworkStream stream = Client.GetStream();
-                await stream.WriteAsync(responseBytes, 0, responseBytes.Length);
-                await stream.FlushAsync();
-            }
-            catch (ObjectDisposedException)
-            {
-                Console.WriteLine("Client already disposed!");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error sending response: {ex.Message}");
-            }
-            finally
-            {
-                Client.Close();
-                Client.Dispose();
-            }
         }
 
 

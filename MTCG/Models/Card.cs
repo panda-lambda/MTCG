@@ -22,6 +22,8 @@ namespace MTCG.Models
         [JsonIgnore]
         public ElementType Element { get; set; }
 
+        [JsonIgnore]
+        public MonsterType Monster { get; set; }
 
 
     }

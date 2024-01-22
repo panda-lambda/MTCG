@@ -21,7 +21,7 @@ namespace MTCG.Models
         public List<string> LogPlayerOne { get; set; } = new();
         public List<string> LogPlayerTwo { get; set; } = new();
          
-        public int Rounds { set; get; } = 0;
+        public int Rounds { set; get; } = 1;
         public ResultType? Result { set; get; }
 
 
