@@ -12,8 +12,13 @@ namespace MTCG.Services.RuleEngine
     {
         private readonly List<IRule> _rules = new()
         {
-            new FireVsWaterRule(),
-            new WaterVsFireRule(),
+            new EffectiveVsIneffectiveReversed(),
+            new EffectiveVsIneffective(),
+            new ImmunityReversed(),
+            new InstantKillReversed(),
+            new InstantKill(),
+            new Immunity(),
+            new DefaultFight()
         };
 
         public Engine()
@@ -22,8 +27,9 @@ namespace MTCG.Services.RuleEngine
         }
 
 
-        public (ResultType?,string, string)Evaluate(Card cardOne, Card cardTwo)
+        public RoundResult? Evaluate(Card cardOne, Card cardTwo)
         {
+
             foreach (IRule rule in _rules)
             {
                 if (rule.Applies(cardOne, cardTwo))
@@ -31,7 +37,7 @@ namespace MTCG.Services.RuleEngine
                     return rule.Execute(cardOne, cardTwo);
                 }
             }
-            return (null,String.Empty,String.Empty);
+            return null; 
         }
     }
 }

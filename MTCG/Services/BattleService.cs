@@ -81,7 +81,7 @@ namespace MTCG.Services
             {
                 throw new UnauthorizedException();
             }
-            List<UserStats>? scoreboard = _userRepository.GetScoreboard();
+            List<UserStats>? scoreboard = _userRepository?.GetScoreboard();
             if (scoreboard == null)
             {
                 throw new InternalServerErrorException("something went wrong -getting the scoreboard");

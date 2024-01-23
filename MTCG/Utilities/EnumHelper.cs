@@ -10,7 +10,7 @@ namespace MTCG.Utilities
     {
         public static TEnum? GetEnumByNameFront<TEnum>(string name) where TEnum : Enum
         {
-            foreach (var enumValue in Enum.GetValues(typeof(TEnum)))
+            foreach (Enum enumValue in Enum.GetValues(typeof(TEnum)))
             {
                 if (name.StartsWith(enumValue.ToString()))
                 {
@@ -22,7 +22,7 @@ namespace MTCG.Utilities
 
         public static TEnum? GetEnumByNameEnd<TEnum>(string name) where TEnum : Enum
         {
-            foreach (var enumValue in Enum.GetValues(typeof(TEnum)))
+            foreach (Enum enumValue in Enum.GetValues(typeof(TEnum)))
             {
                 if (name.EndsWith(enumValue.ToString()))
                 {

@@ -3,6 +3,7 @@ using MTCG.Repositories;
 using MTCG.Services.RuleEngine;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -33,24 +34,29 @@ namespace MTCG.Services
 
             while (deckOne?.CardList?.Count > 0 && deckTwo?.CardList?.Count > 0 && battle.Rounds < 101)
             {
-
+                await Console.Out.WriteLineAsync("starting round "+ battle.Rounds);
                 Card cardOne = GetRandomCard(deckOne.CardList);
                 Card cardTwo = GetRandomCard(deckTwo.CardList);
-                ResultType? result = HandleSingleCardFight(cardOne, cardTwo);
+                await Console.Out.WriteLineAsync($"{cardOne.Name} fighting vs {cardTwo.Name}");
+                RoundResult? result = HandleSingleCardFight(cardOne, cardTwo) ?? throw new Exception("Result is null");
+                await Console.Out.WriteLineAsync(result.ToString());
+                battle.LogPlayerOne.Add(result?.LogRoundPlayerOne);
+                battle.LogPlayerTwo.Add(result?.LogRoundPlayerTwo);
 
-                if (result == ResultType.FirstPlayerWon)
+
+                if (result?.Result == ResultType.FirstPlayerWon)
                 {
                     deckTwo.CardList.Remove(cardTwo);
                     deckOne.CardList.Add(cardTwo);
-                    battle.LogPlayerOne.Add($"Round {battle.Rounds}: You won against {battle.PlayerTwo.Name} and gained the card {cardTwo.Name} with {cardTwo.Damage}");
-                    battle.LogPlayerTwo.Add($"Round {battle.Rounds}: You lost against {battle.PlayerOne.Name} and lost the card {cardTwo.Name} with {cardTwo.Damage}");
+                    battle.LogPlayerOne.Add($"Round {battle.Rounds}: You won against {battle.PlayerTwo.Name} and gained the card {cardTwo.Name} with {cardTwo.Damage} damage.");
+                    battle.LogPlayerTwo.Add($"Round {battle.Rounds}: You lost against {battle.PlayerOne.Name} and lost the card {cardTwo.Name} with {cardTwo.Damage} damage.");
                 }
-                else if (result == ResultType.SecondPlayerWon)
+                else if (result.Result == ResultType.SecondPlayerWon)
                 {
                     deckOne.CardList.Remove(cardOne);
                     deckTwo.CardList.Add(cardOne);
-                    battle.LogPlayerOne.Add($"Round {battle.Rounds}: You lost against {battle.PlayerTwo.Name}  and lost the card {cardOne.Name} with {cardOne.Damage}");
-                    battle.LogPlayerTwo.Add($"Round {battle.Rounds}: You won against {battle.PlayerOne.Name}  and gained the card {cardOne.Name} with {cardOne.Damage}");
+                    battle.LogPlayerOne.Add($"Round {battle.Rounds}: You lost against {battle.PlayerTwo.Name} and lost the card {cardOne.Name} with {cardOne.Damage} damage.");
+                    battle.LogPlayerTwo.Add($"Round {battle.Rounds}: You won against {battle.PlayerOne.Name} and gained the card {cardOne.Name} with {cardOne.Damage} damage.");
                 }
                 else
                 {
@@ -59,7 +65,6 @@ namespace MTCG.Services
 
                 }
                 battle.Rounds++;
-
             }
 
             if (battle.Rounds == 101)
@@ -90,21 +95,21 @@ namespace MTCG.Services
             return deck[index];
         }
 
-        private static ResultType? HandleSingleCardFight(Card cardOne, Card cardTwo)
+        private static RoundResult? HandleSingleCardFight(Card cardOne, Card cardTwo)
         {
-            ResultType? result = null; 
+            RoundResult? result = new();
             if (cardOne == null || cardTwo == null)
                 throw new Exception("No cards in handle Single fight!");
 
             Engine engine = new();
-            result = engine.Evaluate(cardOne, cardTwo); 
+            result = engine.Evaluate(cardOne, cardTwo);
 
 
 
             return result;
         }
 
-        
+
 
 
     }

@@ -15,12 +15,23 @@ namespace MTCG.Data
         }
         public IDbConnection CreateConnection()
         {
-            IDbConnection dbConnection = new NpgsqlConnection(_connectionString);
-            dbConnection.Open();
+            try
+            {
+                IDbConnection dbConnection = new NpgsqlConnection(_connectionString);
+                dbConnection.Open();
+                return dbConnection;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+                Console.WriteLine("Could not connect to database!");
+                throw;
+            }
+            
 
-            //Console.WriteLine("Connected to DB");
+            //Console.WriteLine("Connected to DB");}
 
-            return dbConnection;
+          
         }
     }
 }

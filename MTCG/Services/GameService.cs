@@ -99,17 +99,15 @@ namespace MTCG.Services
             }
             else
             {
-              
-                await Console.Out.WriteLineAsync("client not null in reportlog!!\n\n");
-                await Console.Out.WriteLineAsync($"Connected: {client.Connected}");
-                await Console.Out.WriteLineAsync($"Client stream: {client.GetStream}");  
+            
 
-                string logString = string.Join(", ", log)+"\n\r\n\r";
+                string logString = string.Join("\n", log);
+                string result =    "{\"description\":\""+logString+"\"}";
                 
                 HttpSvrEventArgs e = new HttpSvrEventArgs(client);
 
 
-                e.Reply((int)HttpCodes.OK, JsonConvert.SerializeObject(logString));
+                e.Reply((int)HttpCodes.OK, result);
             }       
 
 
