@@ -10,44 +10,62 @@ using System.Xml.Serialization;
 namespace MTCG.Services.RuleEngine
 {
 
-    public class EffectiveVsIneffectiveReversed : IRule
-    {
-        public int Priority { get; } = 3;
-        public bool Applies(Card cardOne, Card cardTwo)
-        {
-            return ((cardOne.Type == CardType.Spell || cardOne.Type == CardType.Spell)
-                && ((cardOne.Element == ElementType.Fire && cardTwo.Element == ElementType.Water) ||
-                    (cardOne.Element == ElementType.Fire && (cardTwo.Element == ElementType.Normal || cardTwo.Element == ElementType.None)) ||
-                   ((cardOne.Element == ElementType.None || cardOne.Element == ElementType.Normal) && cardTwo.Element == ElementType.Water)));
-
-
-        }
-        public RoundResult Execute(Card cardOne, Card cardTwo)
-        {
-            RoundResult result = new RoundResult();
-            return result;
-        }
-    }
 
     public class EffectiveVsIneffective : IRule
     {
         public int Priority { get; } = 3;
         public bool Applies(Card cardOne, Card cardTwo)
         {
-            return (cardOne.Element == ElementType.Water && cardTwo.Element == ElementType.Fire);
+            return ((cardOne.Type == CardType.Spell || cardTwo.Type == CardType.Spell) &&
+                ((cardOne.Element == ElementType.Water && cardTwo.Element == ElementType.Fire) ||
+                (cardOne.Element == ElementType.Fire && cardTwo.Element == ElementType.Normal) ||
+                (cardOne.Element == ElementType.Normal && cardTwo.Element == ElementType.Water)));
 
         }
 
         public RoundResult Execute(Card cardOne, Card cardTwo)
+
         {
-            RoundResult result = new RoundResult();
+            Console.WriteLine($"effectivness fight with {cardOne.Name} and {cardTwo.Name}");
+            RoundResult result = new();
 
-            result.Result = ResultType.FirstPlayerWon;
-            result.LogRoundPlayerTwo = $"You lost due to the attribute  of {cardOne.Name} with your {cardTwo.Name}";
-            result.LogRoundPlayerOne = $"You won due to the attribute fire of {cardOne.Name} against your {cardTwo.Name}";
+            if (Applies(cardOne, cardTwo))
+            {
+                result.LogRoundPlayerOne = $"Your {cardOne.Name} did double the damage ({cardOne.Damage *2}) due to its {cardOne.Element} element against {cardTwo.Name} with {cardTwo.Element} elementm, which did half the damage ({cardTwo.Damage * 0.5})!";
+                result.LogRoundPlayerTwo = $"Your {cardTwo.Name} did half the damage ({cardTwo.Damage * 0.5}) due to its {cardTwo.Element} element against {cardOne.Name} with {cardOne.Element} element, which did double the damage ({cardOne.Damage * 2})!";
+                if (cardOne.Damage * 2 > cardTwo.Damage * 0.5)
+                {
+                    result.Result = ResultType.FirstPlayerWon;
+                }
+                else if (cardOne.Damage * 2 < cardTwo.Damage * 0.5)
+                {
+                    result.Result = ResultType.SecondPlayerWon;
+                }
+                else if (cardOne.Damage * 2 == cardTwo.Damage * 0.5)
+                {
+                    result.Result = ResultType.Draw;
+                }
+            }
 
+            if (Applies(cardTwo, cardOne))
+            {
+                result.LogRoundPlayerOne = $"Your {cardOne.Name} did half the damage ({cardOne.Damage * 0.5}) due to its {cardOne.Element} element against {cardTwo.Name} with {cardTwo.Element} element, which did double the damage ({cardTwo.Damage * 2})!";
+                result.LogRoundPlayerTwo = $"Your {cardTwo.Name} did double the damage ({cardTwo.Damage * 2}) due to its {cardTwo.Element} element against {cardOne.Name} with {cardOne.Element} element, which did half the damage ({cardOne.Damage * 0.5})!";
+
+                if (cardOne.Damage * 0.5 > cardTwo.Damage * 2)
+                {
+                    result.Result = ResultType.FirstPlayerWon;
+                }
+                else if (cardOne.Damage * 0.5 < cardTwo.Damage * 2)
+                {
+                    result.Result = ResultType.SecondPlayerWon;
+                }
+                else if (cardOne.Damage * 0.5 == cardTwo.Damage * 2)
+                {
+                    result.Result = ResultType.Draw;
+                }
+            }
             return result;
-
         }
     }
 
@@ -61,65 +79,30 @@ namespace MTCG.Services.RuleEngine
                     (cardOne.Monster == MonsterType.Wizard && cardTwo.Monster == MonsterType.Ork) ||
                     (cardOne.Monster == MonsterType.Kraken && cardTwo.Type == CardType.Spell) ||
                     (cardOne.Monster == MonsterType.Elf && cardOne.Element == ElementType.Fire && cardTwo.Monster == MonsterType.Dragon)
-
-
-                    );
-
-        }
-
-        public RoundResult Execute(Card cardOne, Card cardTwo)
-        {
-            RoundResult result = new RoundResult();
-
-            result.Result = ResultType.FirstPlayerWon;
-            result.LogRoundPlayerTwo = $"Your {cardTwo.Name} cannot attack {cardOne.Name} because of immunity!";
-            result.LogRoundPlayerOne = $"Your {cardOne.Name} is immune against {cardTwo.Name}!";
-
-            return result;
-
-        }
-    }
-
-    public class ImmunityReversed : IRule
-    {
-        public int Priority { get; } = 1;
-        public bool Applies(Card cardOne, Card cardTwo)
-        {
-            return ((cardTwo.Monster == MonsterType.Dragon && cardOne.Monster == MonsterType.Goblin) ||
-                    (cardTwo.Monster == MonsterType.Wizard && cardOne.Monster == MonsterType.Ork) ||
-                    (cardTwo.Monster == MonsterType.Kraken && cardOne.Type == CardType.Spell) ||
-                    (cardTwo.Monster == MonsterType.Elf && cardTwo.Element == ElementType.Fire && cardOne.Monster == MonsterType.Dragon)
                     );
         }
 
         public RoundResult Execute(Card cardOne, Card cardTwo)
         {
-            RoundResult result = new RoundResult();
-            result.Result = ResultType.SecondPlayerWon;
-            result.LogRoundPlayerOne = $"Your {cardTwo.Name} cannot attack {cardOne.Name} because of immunity!";
-            result.LogRoundPlayerTwo = $"Your {cardOne.Name} is immune against {cardTwo.Name}!";
+            RoundResult result = new();
+            Console.WriteLine($"immunity fight with {cardOne.Name} and {cardTwo.Name}");
+
+            if (Applies(cardOne, cardTwo))
+            {
+                result.Result = ResultType.FirstPlayerWon;
+                result.LogRoundPlayerOne = $"Your {cardOne.Name} is immune against {cardTwo.Name}!";
+                result.LogRoundPlayerTwo = $"Your {cardTwo.Name} cannot attack {cardOne.Name} because of immunity!";
+            }
+            else if (Applies(cardTwo, cardOne))
+            {
+                result.Result = ResultType.SecondPlayerWon;
+                result.LogRoundPlayerOne = $"Your {cardOne.Name} cannot attack {cardTwo.Name} because of immunity!";
+                result.LogRoundPlayerTwo = $"Your {cardTwo.Name} is immune against {cardOne.Name}!";
+            }
             return result;
+
         }
     }
-
-    public class InstantKillReversed : IRule
-    {
-        public int Priority { get; } = 1;
-        public bool Applies(Card cardOne, Card cardTwo)
-        {
-            return (cardOne.Monster == MonsterType.Knight && cardTwo.Type == CardType.Spell && cardTwo.Element == ElementType.Water);
-        }
-
-        public RoundResult Execute(Card cardOne, Card cardTwo)
-        {
-            RoundResult result = new RoundResult();
-            result.Result = ResultType.SecondPlayerWon;
-            result.LogRoundPlayerOne = $"Your {cardOne.Name} is too heavy, it instantly drowned against {cardTwo.Name}!";
-            result.LogRoundPlayerTwo = $"Your {cardTwo.Name} instantly drowned {cardOne.Name} !";
-            return result;
-        }
-    }
-
     public class InstantKill : IRule
     {
         public int Priority { get; } = 1;
@@ -130,15 +113,22 @@ namespace MTCG.Services.RuleEngine
 
         public RoundResult Execute(Card cardOne, Card cardTwo)
         {
+            Console.WriteLine($"Instant kill with {cardOne.Name} and {cardTwo.Name}");
             RoundResult result = new RoundResult();
+            if (Applies(cardOne, cardTwo))
+            {
+                result.Result = ResultType.FirstPlayerWon;
+                result.LogRoundPlayerOne = $"Your {cardOne.Name} instantly drowned {cardTwo.Name} !";
+                result.LogRoundPlayerTwo = $"Your {cardTwo.Name} is too heavy, it instantly drowned against {cardOne.Name}!";
+            }
 
-            result.Result = ResultType.FirstPlayerWon;
-            result.LogRoundPlayerOne = $"Your {cardOne.Name} is too heavy,it instantly drowned against {cardTwo.Name}!";
-            result.LogRoundPlayerTwo = $"Your {cardTwo.Name} instantly drowned {cardOne.Name}!";
-
-
+            else if (Applies(cardTwo, cardOne))
+            {
+                result.Result = ResultType.SecondPlayerWon;
+                result.LogRoundPlayerOne = $"Your {cardOne.Name} is too heavy,it instantly drowned against {cardTwo.Name}!";
+                result.LogRoundPlayerTwo = $"Your {cardTwo.Name} instantly drowned {cardOne.Name}!";
+            }
             return result;
-
         }
     }
 
@@ -152,31 +142,21 @@ namespace MTCG.Services.RuleEngine
 
         public RoundResult Execute(Card cardOne, Card cardTwo)
         {
+            Console.WriteLine($"Default fight with {cardOne.Name} and {cardTwo.Name}");
             RoundResult result = new RoundResult();
             if (cardOne.Damage > cardTwo.Damage)
             {
                 result.Result = ResultType.FirstPlayerWon;
-
-                result.LogRoundPlayerTwo = $"Your {cardTwo.Name} lost with {cardTwo.Damage} damage against {cardOne.Name} with {cardOne.Damage} damage!";
-                result.LogRoundPlayerOne = $"Your {cardOne.Name} won with {cardOne.Damage} damage against {cardTwo.Name} with {cardTwo.Damage} damage!";
             }
             else if (cardOne.Damage < cardTwo.Damage)
             {
                 result.Result = ResultType.SecondPlayerWon;
-
-                result.LogRoundPlayerTwo = $"Your {cardTwo.Name} won with {cardTwo.Damage} damage against {cardOne.Name} with {cardOne.Damage} damage!";
-                result.LogRoundPlayerOne = $"Your {cardOne.Name} lost with {cardOne.Damage} damage against {cardTwo.Name} with {cardTwo.Damage} damage!";
             }
             else
             {
                 result.Result = ResultType.Draw;
-
-                result.LogRoundPlayerTwo = $"Your {cardTwo.Name} draw with {cardTwo.Damage} damage against {cardOne.Name} with {cardOne.Damage} damage!";
-                result.LogRoundPlayerOne = $"Your {cardOne.Name} draw with {cardOne.Damage} damage against {cardTwo.Name} with {cardTwo.Damage} damage!";
             }
-
             return result;
-
         }
     }
 }

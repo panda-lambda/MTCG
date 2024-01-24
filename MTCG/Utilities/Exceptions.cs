@@ -56,12 +56,16 @@ namespace MTCG.Utilities
     public class UserHasNoValidDeckException : Exception
     {
         public UserHasNoValidDeckException(string message) : base(message) { }
-    }  public class UserCurrentlyFightingException : Exception
+    } 
+    public class UserCurrentlyFightingException : Exception
     {
         public UserCurrentlyFightingException() : base() { }
     }
 
-
+    public class BattleResultIsNullException : Exception
+    {
+        public BattleResultIsNullException(): base() { }
+    }
 
 
 }

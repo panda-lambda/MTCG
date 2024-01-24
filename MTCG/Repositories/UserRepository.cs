@@ -74,6 +74,49 @@ namespace MTCG.Repositories
             }
         }
 
+        public void UpdateUserStats(Guid id, UserStats stats)
+        {
+            using (var connection = _connectionFactory.CreateConnection())
+            {
+                using (var transaction = connection.BeginTransaction())
+                using (var cmd = connection.CreateCommand())
+                {
+                    try
+                    {
+                        cmd.CommandText = "UPDATE USERSTATS SET ELO = :elo, WINS = :wins, LOSSES = :losses WHERE ID = :id";
+
+                        IDataParameter elo = cmd.CreateParameter();
+                        elo.ParameterName = ":elo";
+                        elo.Value = stats.Elo;
+                        cmd.Parameters.Add(elo);
+
+                        IDataParameter wins = cmd.CreateParameter();
+                        wins.ParameterName = ":wins";
+                        wins.Value = stats.Wins;
+                        cmd.Parameters.Add(wins);
+
+                        IDataParameter losses = cmd.CreateParameter();
+                        losses.ParameterName = ":losses";
+                        losses.Value = stats.Losses;
+                        cmd.Parameters.Add(losses);
+
+                        IDataParameter i = cmd.CreateParameter();
+                        i.ParameterName = ":id";
+                        i.Value = id;
+                        cmd.Parameters.Add(i);
+
+                        cmd.ExecuteNonQuery();
+                        transaction.Commit();
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine(ex.Message);
+                        Console.WriteLine("exception in userrepository getting hashed pw");
+                    }
+                }
+            }
+        }
+
         public string GetNameByGuid(Guid? userId)
         {
             using (var connection = _connectionFactory.CreateConnection())
@@ -108,7 +151,7 @@ namespace MTCG.Repositories
                 return String.Empty;
 
             }
-        }           
+        }
 
 
 

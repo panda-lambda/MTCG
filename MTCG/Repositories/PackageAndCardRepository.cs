@@ -6,6 +6,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Data;
+using System.Data.Common;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Runtime.InteropServices;
@@ -80,7 +81,7 @@ namespace MTCG.Repositories
                                     throw new InternalServerErrorException("Could not convert faction type to enum");
                                 }
 
-                                 nameString = reader.GetString(5);
+                                nameString = reader.GetString(5);
                                 if (Enum.TryParse<CardType>(nameString, out CardType cardT))
                                 {
                                     card.Type = cardT;
@@ -90,7 +91,7 @@ namespace MTCG.Repositories
                                     throw new InternalServerErrorException("Could not convert card type to enum");
                                 }
 
-                                 nameString = reader.GetString(6);
+                                nameString = reader.GetString(6);
                                 if (Enum.TryParse<MonsterType>(nameString, out MonsterType monster))
                                 {
                                     card.Monster = monster;
@@ -114,15 +115,15 @@ namespace MTCG.Repositories
                             }
                         }
 
-                            if (deck.CardList.Count < 1)
-                            {
-                                throw new InvalidCardCountInDeck("Invalid card count in deck");
-                            }
+                        if (deck.CardList.Count < 1)
+                        {
+                            throw new InvalidCardCountInDeck("Invalid card count in deck");
                         }
                     }
-
-                    return deck;
                 }
+
+                return deck;
+            }
             catch (UserHasNoCardsException)
             {
                 throw;
@@ -135,7 +136,51 @@ namespace MTCG.Repositories
             {
                 throw new InternalServerErrorException(ex.Message + " in GetDeckByUser repository");
             }
-                    
+
+        }
+
+        public void UpdateCardsById(Guid userId, Deck deck)
+        {
+            using var connection = _connectionFactory.CreateConnection();
+            try
+            {
+                using (var transaction = connection.BeginTransaction())
+                {
+                    using (var cmd = connection.CreateCommand())
+                    {
+                        cmd.CommandText =
+                            $"DELETE FROM CARDS WHERE OwnerId = :uid AND Id " +
+                            $"IN(  " +
+                            $"SELECT CardId1 FROM DECKS WHERE OwnerId = :uid UNION" +
+                            $"SELECT CardId2 FROM DECKS WHERE OwnerId = :uid UNION" +
+                            $"SELECT CardId3 FROM DECKS WHERE OwnerId = :uid UNION" +
+                            $"SELECT CardId4 FROM DECKS WHERE OwnerId = :uid";
+                        IDataParameter p = cmd.CreateParameter();
+                        p.ParameterName = ":uid";
+                        p.Value = userId;
+                        cmd.Parameters.Add(p);
+                        cmd.ExecuteNonQuery();
+
+                        cmd.Parameters.Clear();
+
+                        cmd.CommandText = $"UPDATE DECKS SET CardId1 = NULL, CardId2 = NULL, CardId3 = NULL, CardId4 = NULL WHERE OwnerId = :uid";
+
+                        p = cmd.CreateParameter();
+                        p.ParameterName = ":uid";
+                        p.Value = userId;
+                        cmd.Parameters.Add(p);
+                        cmd.ExecuteNonQuery();
+                    }
+
+
+                    transaction.Commit();
+                }
+
+            }
+            catch (Exception ex)
+            {
+                throw new InternalServerErrorException(ex.Message + " in GetCardsbyuser repository");
+            }
         }
 
         public List<Card>? GetCardsByUser(Guid userId)
@@ -202,14 +247,8 @@ namespace MTCG.Repositories
         {
             Console.WriteLine(" in addpackge repo");
             using var connection = _connectionFactory.CreateConnection();
-
-
             try
             {
-
-
-
-
                 if (package.CardList != null)
                 {
 
@@ -242,7 +281,7 @@ namespace MTCG.Repositories
 
                         var pElement = cmd.CreateParameter();
                         pElement.ParameterName = ":elm";
-                        cmd.Parameters.Add(pElement); 
+                        cmd.Parameters.Add(pElement);
                         var pMonster = cmd.CreateParameter();
                         pMonster.ParameterName = ":mon";
                         cmd.Parameters.Add(pMonster);

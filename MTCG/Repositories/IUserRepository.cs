@@ -9,25 +9,22 @@ namespace MTCG.Repositories
 {
     public interface IUserRepository
     {
-        public bool registerUser(UserCredentials userCredentials);
+        bool registerUser(UserCredentials userCredentials);
 
-        public UserCredentials? GetHashByUsername(string username);
+        UserCredentials? GetHashByUsername(string username);
 
-        public Guid? GetGuidByUserName(string userName);
+        Guid? GetGuidByUserName(string userName);
 
-        public int? GetCoinsByUser(string username);
+        int? GetCoinsByUser(string username);
 
-        public bool SetCoinsByUser(string username, int amount);
+        bool SetCoinsByUser(string username, int amount);
 
-        public UserData? GetUserData(Guid userId);
+        UserData? GetUserData(Guid userId);
 
-        public bool UpdateUserData(Guid userId, UserData userData);
+        bool UpdateUserData(Guid userId, UserData userData);
 
-        public UserStats GetUserStats(Guid userId);
-        public List<UserStats>? GetScoreboard();
-
-
-
-
+        UserStats GetUserStats(Guid userId);
+        List<UserStats>? GetScoreboard();
+        void UpdateUserStats(Guid id, UserStats stats);
     }
 }

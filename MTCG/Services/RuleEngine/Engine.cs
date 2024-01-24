@@ -12,10 +12,8 @@ namespace MTCG.Services.RuleEngine
     {
         private readonly List<IRule> _rules = new()
         {
-            new EffectiveVsIneffectiveReversed(),
+           // new EffectiveVsIneffectiveReversed(),
             new EffectiveVsIneffective(),
-            new ImmunityReversed(),
-            new InstantKillReversed(),
             new InstantKill(),
             new Immunity(),
             new DefaultFight()
@@ -32,10 +30,12 @@ namespace MTCG.Services.RuleEngine
 
             foreach (IRule rule in _rules)
             {
-                if (rule.Applies(cardOne, cardTwo))
+                if (rule.Applies(cardOne, cardTwo) || rule.Applies(cardTwo, cardOne))
                 {
                     return rule.Execute(cardOne, cardTwo);
-                }
+                } 
+
+
             }
             return null; 
         }

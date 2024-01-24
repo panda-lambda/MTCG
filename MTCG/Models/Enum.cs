@@ -9,7 +9,6 @@ namespace MTCG.Models
     public enum CardType
     {
         /// <summary>This enum provides the card type.</summary>
-        None,
         Monster,
         Spell,
         
@@ -31,7 +30,7 @@ namespace MTCG.Models
     public enum ElementType
     {
         /// <summary>This enum provides the element type of a card.</summary>
-        None,
+        
         Normal,
         Fire,
         Water,

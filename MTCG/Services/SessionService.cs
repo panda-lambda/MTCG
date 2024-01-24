@@ -288,7 +288,7 @@ namespace MTCG.Services
             return _sessions.TryRemove(userId, out _);
         }
 
-       public UserSession? GetSession(Guid userId)
+       public UserSession GetSession(Guid userId)
         {
             _ = _sessions.TryGetValue(userId, value: out UserSession? session);
 
