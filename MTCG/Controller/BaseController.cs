@@ -44,16 +44,41 @@ namespace MTCG.Controller
 
             catch (UserCurrentlyFightingException)
             {
-                e.Reply((int)HttpCodes.CONFLICT, "{\"description\":\"User is currently fighting.\"}");
-
+                e.Reply((int)HttpCodes.CONFLICT, "{\"description\":\"User is currently fighting, please wait for the fight to finish.\"}");
             }
+
+            catch (InvalidCardForDealException)
+            {
+                e.Reply((int)HttpCodes.FORBIDDEN, "{\"description\":\"The deal contains a card that is not owned by the user or locked in the deck.\"}");
+            }
+
+            catch (DealAlreadyExistsException)
+            {
+                e.Reply((int)HttpCodes.CONFLICT, "{\"description\":\"A deal with this deal ID already exists.\"}");
+            }
+
+            catch (NoAvailableTradingDealsException)
+            {
+                e.Reply((int)HttpCodes.NO_CONTENT, "{\"description\":\"The request was fine, but there are no trading deals available.\"}");
+            }
+
+            catch (ForbiddenException ex)
+            {
+                e.Reply((int)HttpCodes.FORBIDDEN, $"{{\"description\":\"{ex}\"}}");
+            }
+
+            catch (NotFoundException ex)
+            {
+                e.Reply((int)HttpCodes.NOT_FOUND, $"{{\"description\":\"{ex}\"}}");
+            }
+
             catch (Exception ex)
             {
                 Console.WriteLine(ex.Message);
                 e.Reply((int)HttpCodes.INTERNAL_SERVER_ERROR, "{\"msg\":\"Something went wrong.\"}");
             }
 
-            
+
 
 
         }

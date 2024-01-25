@@ -24,10 +24,284 @@ namespace MTCG.Repositories
         public PackageAndCardRepository(IDatabaseConnectionFactory connectionFactory)
         {
             _connectionFactory = connectionFactory;
+        }
+
+
+        public bool CheckCardForTradingDeal(Guid cardId, Guid userId)
+        {
+            using var connection = _connectionFactory.CreateConnection();
+            using (var cmd = connection.CreateCommand())
+            {
+                cmd.CommandText = @" SELECT Id FROM cards WHERE Id = :id AND OwnerId = :uid";
+                IDataParameter cid = cmd.CreateParameter();
+                cid.ParameterName = ":id";
+                cid.Value = cardId;
+                cmd.Parameters.Add(cid);
+
+                IDataParameter uid = cmd.CreateParameter();
+                uid.ParameterName = ":uid";
+                uid.Value = userId;
+                cmd.Parameters.Add(uid);
+
+                using (var reader = cmd.ExecuteReader())
+                {
+                    if (!reader.Read())
+                    {
+                        throw new InvalidCardForDealException();//if there is no card with that id and that owner, ->trade is forbidden
+                    }
+                }
+
+                cmd.Parameters.Clear();
+
+                cmd.CommandText = @" SELECT * FROM DECKS 
+                WHERE ownerId = :uid AND (CardId1 = :cardId 
+                 OR CardId2 = :cardId 
+                OR CardId3 = :cardId 
+                OR CardId4 = :cardId)";
+
+                cid = cmd.CreateParameter();
+                cid.ParameterName = ":cardId";
+                cid.Value = cardId;
+                cmd.Parameters.Add(cid);
+
+                uid = cmd.CreateParameter();
+                uid.ParameterName = ":uid";
+                uid.Value = userId;
+                cmd.Parameters.Add(uid);
+
+                using (var reader = cmd.ExecuteReader())
+                {
+                    if (!reader.Read())
+                    {
+                        throw new InvalidCardForDealException();//if the card is in a deck ->forbidden
+                    }
+                }
+
+
+                return true;
+            }
 
 
         }
 
+
+        public Guid? GetTradingDealsByTradingId(Guid tradingId)
+        {
+            using var connection = _connectionFactory.CreateConnection();
+            try
+            {
+                using (var cmd = connection.CreateCommand())
+                {
+                    cmd.CommandText = @" SELECT * FROM TRADES WHERE Id = :id";
+                    IDataParameter uid = cmd.CreateParameter();
+                    uid.ParameterName = ":p";
+                    uid.Value = tradingId;
+                    cmd.Parameters.Add(uid);
+
+                    using (var reader = cmd.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            if (!reader.IsDBNull(0)) // chek if there is a trade
+                                return (reader.GetGuid(0));
+                        }
+                    }
+                    return null;
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new InternalServerErrorException(ex.Message + " in gettradingdealsbyTradingdeal -packagerepository");
+            }
+        }
+
+
+        public bool TradeSingleCard(Guid tradeId, Guid userId)
+        {
+
+            return false;
+        }
+        public bool DeleteTradingDeal(Guid tradeId, Guid userId)
+        {
+            int rowsAffected = 0;
+            using var connection = _connectionFactory.CreateConnection();
+            using (var transaction = connection.BeginTransaction())
+            {
+                try
+                {
+
+
+                    using (var cmd = connection.CreateCommand())
+                    {
+                        cmd.CommandText = $"Select OWNERID FROM TRADES WHERE ID = :id ";
+                        IDataParameter id = cmd.CreateParameter();
+                        id.ParameterName = ":id";
+                        id.Value = tradeId;
+                        cmd.Parameters.Add(id);
+
+                        IDataParameter oid = cmd.CreateParameter();
+                        oid.ParameterName = ":oid";
+                        oid.Value = userId;
+                        cmd.Parameters.Add(oid);
+
+                        using (var reader = cmd.ExecuteReader())
+                        {
+                            Guid userIdReal = Guid.Empty;
+                            if (!reader.Read())
+                            {
+                                throw new NotFoundException("The provided deal ID was not found.");
+                            }
+                            else
+                            {
+                                userIdReal = reader.GetGuid(0);
+
+                            }
+
+                            if (userIdReal != userId)
+                            {
+                                throw new ForbiddenException("The deal contains a card that is not owned by the user.");
+                            }
+
+
+                        }
+                        cmd.Parameters.Clear();
+
+                        cmd.CommandText = $"DELETE FROM TRADES WHERE ID = :id AND OWNERID = :oid";
+
+                        id = cmd.CreateParameter();
+                        id.ParameterName = ":id";
+                        id.Value = tradeId;
+                        cmd.Parameters.Add(id);
+
+                        oid = cmd.CreateParameter();
+                        oid.ParameterName = ":oid";
+                        oid.Value = userId;
+                        cmd.Parameters.Add(oid);
+
+                        rowsAffected = cmd.ExecuteNonQuery();
+
+                    }
+                    transaction.Commit();
+
+                }
+                catch (Exception ex)
+                {
+                    transaction.Rollback();
+                    throw new InternalServerErrorException(ex.Message + " removetradingdeal -packagerepository");
+                }
+                return rowsAffected > 0;
+            }
+        }
+
+        public List<TradingDeal> GetAllTradingDeals()
+        {
+            using var connection = _connectionFactory.CreateConnection();
+            try
+            {
+                using (var cmd = connection.CreateCommand())
+                {
+                    cmd.CommandText = @" SELECT ID, OWNERID, CARDTOTRADE, TYPE, MINDAMAGE FROM TRADES";
+
+                    using (var reader = cmd.ExecuteReader())
+                    {
+                        List<TradingDeal> deals = new();
+
+                        if (!reader.Read())
+                            throw new NoAvailableTradingDealsException();
+                        do
+                        {
+                            string? typeS = null;
+                            float? minDamage = null;
+                            CardType? type = null;
+                            Guid id = reader.GetGuid(0);
+                            Guid ownerId = reader.GetGuid(1);
+                            Guid cardToTrade = reader.GetGuid(2);
+                            if (!reader.IsDBNull(4))
+                                minDamage = reader.GetFloat(4);
+                            if (!reader.IsDBNull(3))
+                            {
+                                typeS = reader.GetString(3);
+
+                                if (Enum.TryParse<CardType>(typeS, out CardType cardT))
+                                {
+                                    type = cardT;
+                                }
+                                else
+                                {
+                                    throw new InternalServerErrorException("Could not convert card type to enum");
+                                }
+                            }
+                            TradingDeal singleDeal = new TradingDeal
+                            {
+                                Id = id,
+                                OwnerId = ownerId,
+                                CardToTrade = cardToTrade,
+                                Type = type,
+                                MinDamage = minDamage
+
+                            };
+                            deals.Add(singleDeal);
+
+
+                        } while (reader.Read());
+                        return deals;
+                    }
+                }
+            }
+
+            catch (Exception ex)
+            {
+                throw new InternalServerErrorException(ex.Message + " in gettradingdealsbyTradingdeal -packagerepository");
+            }
+        }
+
+        public bool CreateNewTradingDeal(TradingDeal tradingDeal)
+        {
+            using var connection = _connectionFactory.CreateConnection();
+            try
+            {
+                using (var transaction = connection.BeginTransaction())
+                {
+                    using (var cmd = connection.CreateCommand())
+                    {
+                        cmd.CommandText = $"INSERT INTO TRADES (Id, OwnerId, CardToTrade, Type) VALUES (:id, :oid, :ctd, :type, :mindmg)";
+
+                        IDataParameter p = cmd.CreateParameter();
+                        p.ParameterName = ":id";
+                        p.Value = tradingDeal.Id;
+                        cmd.Parameters.Add(p);
+
+                        p = cmd.CreateParameter();
+                        p.ParameterName = ":oid";
+                        p.Value = tradingDeal.OwnerId;
+                        cmd.Parameters.Add(p);
+
+                        p = cmd.CreateParameter();
+                        p.ParameterName = ":ctd";
+                        p.Value = tradingDeal.CardToTrade;
+                        cmd.Parameters.Add(p);
+
+                        p = cmd.CreateParameter();
+                        p.ParameterName = ":type";
+                        p.Value = tradingDeal.Type;
+                        cmd.Parameters.Add(p);
+
+                        p = cmd.CreateParameter();
+                        p.ParameterName = ":mindmg";
+                        p.Value = tradingDeal.MinDamage;
+                        cmd.Parameters.Add(p);
+
+                        int rowsAffected = cmd.ExecuteNonQuery();
+                        return rowsAffected > 0;
+                    }
+                }
+
+            }
+            catch (Exception ex)
+            {
+                throw new InternalServerErrorException(ex.Message + " in createnewtradingdeal -packagerepository");
+            }
+        }
 
 
 
@@ -144,17 +418,17 @@ namespace MTCG.Repositories
             using var connection = _connectionFactory.CreateConnection();
             try
             {
+                if (deck != null && deck.CardList != null && deck.CardList.Count == 0)
+                {
+                    return;
+                }
                 using (var transaction = connection.BeginTransaction())
                 {
+
                     using (var cmd = connection.CreateCommand())
                     {
-                        cmd.CommandText =
-                            $"DELETE FROM CARDS WHERE OwnerId = :uid AND Id " +
-                            $"IN(  " +
-                            $"SELECT CardId1 FROM DECKS WHERE OwnerId = :uid UNION" +
-                            $"SELECT CardId2 FROM DECKS WHERE OwnerId = :uid UNION" +
-                            $"SELECT CardId3 FROM DECKS WHERE OwnerId = :uid UNION" +
-                            $"SELECT CardId4 FROM DECKS WHERE OwnerId = :uid";
+
+                        cmd.CommandText = $"UPDATE DECKS SET CardId1 = NULL, CardId2 = NULL, CardId3 = NULL, CardId4 = NULL WHERE OwnerId = :uid";
                         IDataParameter p = cmd.CreateParameter();
                         p.ParameterName = ":uid";
                         p.Value = userId;
@@ -162,24 +436,40 @@ namespace MTCG.Repositories
                         cmd.ExecuteNonQuery();
 
                         cmd.Parameters.Clear();
+                        //now delete cards from user
+                        string inClause = "UPDATE CARDS SET OwnerId = :uid WHERE Id IN (";
 
-                        cmd.CommandText = $"UPDATE DECKS SET CardId1 = NULL, CardId2 = NULL, CardId3 = NULL, CardId4 = NULL WHERE OwnerId = :uid";
+                        for (int i = 0; i < deck?.CardList?.Count; i++)
+                        {
+                            string paramName = ":cardId" + i;
+                            inClause += paramName;
 
-                        p = cmd.CreateParameter();
-                        p.ParameterName = ":uid";
-                        p.Value = userId;
-                        cmd.Parameters.Add(p);
+                            if (i < deck.CardList.Count - 1)
+                            {
+                                inClause += ", ";
+                            }
+                            IDataParameter cardP = cmd.CreateParameter();
+                            cardP.ParameterName = paramName;
+                            cardP.Value = deck.CardList[i].Id;
+                            cmd.Parameters.Add(cardP);
+                        }
+
+                        inClause += ")";
+                        cmd.CommandText = inClause;
+
+                        IDataParameter uid = cmd.CreateParameter();
+                        uid.ParameterName = ":uid";
+                        uid.Value = userId;
+                        cmd.Parameters.Add(uid);
                         cmd.ExecuteNonQuery();
+                        cmd.Parameters.Clear();
                     }
-
-
                     transaction.Commit();
                 }
-
             }
             catch (Exception ex)
             {
-                throw new InternalServerErrorException(ex.Message + " in GetCardsbyuser repository");
+                throw new InternalServerErrorException(ex.Message + " in updatecardsbyid -packagerepository");
             }
         }
 
@@ -259,30 +549,30 @@ namespace MTCG.Repositories
                         cmd.Transaction = transaction;
                         cmd.CommandText = "INSERT INTO CARDS (ID, NAME, DAMAGE, TYPE, LOCKED, ELEMENT, MONSTER) VALUES (:id, :n, :dmg, :t, :lock, :elm, :mon)";
 
-                        var pId = cmd.CreateParameter();
+                        IDataParameter pId = cmd.CreateParameter();
                         pId.ParameterName = ":id";
                         cmd.Parameters.Add(pId);
 
-                        var pName = cmd.CreateParameter();
+                        IDataParameter pName = cmd.CreateParameter();
                         pName.ParameterName = ":n";
                         cmd.Parameters.Add(pName);
 
-                        var pDamage = cmd.CreateParameter();
+                        IDataParameter pDamage = cmd.CreateParameter();
                         pDamage.ParameterName = ":dmg";
                         cmd.Parameters.Add(pDamage);
 
-                        var pType = cmd.CreateParameter();
+                        IDataParameter pType = cmd.CreateParameter();
                         pType.ParameterName = ":t";
                         cmd.Parameters.Add(pType);
 
-                        var pLocked = cmd.CreateParameter();
+                        IDataParameter pLocked = cmd.CreateParameter();
                         pLocked.ParameterName = ":lock";
                         cmd.Parameters.Add(pLocked);
 
-                        var pElement = cmd.CreateParameter();
+                        IDataParameter pElement = cmd.CreateParameter();
                         pElement.ParameterName = ":elm";
                         cmd.Parameters.Add(pElement);
-                        var pMonster = cmd.CreateParameter();
+                        IDataParameter pMonster = cmd.CreateParameter();
                         pMonster.ParameterName = ":mon";
                         cmd.Parameters.Add(pMonster);
 

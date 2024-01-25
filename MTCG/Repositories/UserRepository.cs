@@ -3,6 +3,7 @@ using MTCG.Models;
 using MTCG.Utilities;
 using Npgsql;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Data;
 using System.Drawing;
@@ -49,6 +50,7 @@ namespace MTCG.Repositories
                                 int elo = reader.GetInt32(2);
                                 int wins = reader.GetInt32(3);
                                 int losses = reader.GetInt32(4);
+                                int games = reader.GetInt32(5);
 
 
                                 return new UserStats
@@ -56,7 +58,8 @@ namespace MTCG.Repositories
                                     Name = name,
                                     Elo = elo,
                                     Wins = wins,
-                                    Losses = losses
+                                    Losses = losses,
+                                    Games = games
                                 };
                             }
                         }
@@ -66,7 +69,7 @@ namespace MTCG.Repositories
                 catch (Exception ex)
                 {
                     Console.WriteLine(ex.Message);
-                    Console.WriteLine("exception in userrepository getting hashed pw");
+                    Console.WriteLine("exception in userrepository getuserstats");
 
                 }
                 return null;
@@ -76,6 +79,8 @@ namespace MTCG.Repositories
 
         public void UpdateUserStats(Guid id, UserStats stats)
         {
+            Console.WriteLine("stats in updateuserStats");
+            Console.WriteLine($"{stats.Wins} w und {stats.Losses} l und elo {stats.Elo}");
             using (var connection = _connectionFactory.CreateConnection())
             {
                 using (var transaction = connection.BeginTransaction())
@@ -83,7 +88,7 @@ namespace MTCG.Repositories
                 {
                     try
                     {
-                        cmd.CommandText = "UPDATE USERSTATS SET ELO = :elo, WINS = :wins, LOSSES = :losses WHERE ID = :id";
+                        cmd.CommandText = "UPDATE USERSTATS SET ELO = :elo, WINS = :wins, LOSSES = :losses, GAMES = :games WHERE ID = :id";
 
                         IDataParameter elo = cmd.CreateParameter();
                         elo.ParameterName = ":elo";
@@ -100,10 +105,16 @@ namespace MTCG.Repositories
                         losses.Value = stats.Losses;
                         cmd.Parameters.Add(losses);
 
+                        IDataParameter g = cmd.CreateParameter();
+                        g.ParameterName = ":games";
+                        g.Value = stats.Games;
+                        cmd.Parameters.Add(g);
+
                         IDataParameter i = cmd.CreateParameter();
                         i.ParameterName = ":id";
                         i.Value = id;
                         cmd.Parameters.Add(i);
+                   
 
                         cmd.ExecuteNonQuery();
                         transaction.Commit();
@@ -111,7 +122,7 @@ namespace MTCG.Repositories
                     catch (Exception ex)
                     {
                         Console.WriteLine(ex.Message);
-                        Console.WriteLine("exception in userrepository getting hashed pw");
+                        Console.WriteLine("exception in userrepository updateuserstats");
                     }
                 }
             }
@@ -175,7 +186,8 @@ namespace MTCG.Repositories
                                     Name = reader.GetString(1),
                                     Elo = reader.GetInt32(2),
                                     Wins = reader.GetInt32(3),
-                                    Losses = reader.GetInt32(4)
+                                    Losses = reader.GetInt32(4),
+                                    Games = reader.GetInt32(5)
                                 };
                                 scoreboard.Add(userStats);
                             }
@@ -240,8 +252,10 @@ namespace MTCG.Repositories
 
 
 
-        public int? GetCoinsByUser(string username)
+        public int? GetCoinsByUserId(Guid userId)
         {
+
+            Console.WriteLine("in get coins");
             using (var connection = _connectionFactory.CreateConnection())
             {
                 try
@@ -249,10 +263,10 @@ namespace MTCG.Repositories
                     using (var cmd = connection.CreateCommand())
                     {
 
-                        cmd.CommandText = "SELECT COINS FROM USERDATA WHERE NAME= :n";
+                        cmd.CommandText = "SELECT COINS FROM USERDATA WHERE Id= :n";
                         IDataParameter n = cmd.CreateParameter();
                         n.ParameterName = ":n";
-                        n.Value = username;
+                        n.Value = userId;
                         cmd.Parameters.Add(n);
                         using (var reader = cmd.ExecuteReader())
                         {
@@ -274,15 +288,16 @@ namespace MTCG.Repositories
             }
         }
 
-        public bool SetCoinsByUser(string username, int amount)
+        public bool SetCoinsByUserId(Guid userId, int amount)
         {
+            Console.WriteLine("in set goins with "+ amount);
             using (var connection = _connectionFactory.CreateConnection())
             {
                 try
                 {
                     using (var cmd = connection.CreateCommand())
                     {
-                        cmd.CommandText = "UPDATE USERDATA SET COINS = :coins WHERE NAME = :user";
+                        cmd.CommandText = "UPDATE USERDATA SET COINS = :coins WHERE id = :user";
 
 
                         IDataParameter c = cmd.CreateParameter();
@@ -292,12 +307,12 @@ namespace MTCG.Repositories
 
                         IDataParameter u = cmd.CreateParameter();
                         u.ParameterName = ":user";
-                        u.Value = username;
+                        u.Value = userId;
                         cmd.Parameters.Add(u);
 
 
                         int rowsAffected = cmd.ExecuteNonQuery();
-                        return rowsAffected > 0; //check if any rows where affected
+                        return rowsAffected > 0; 
                     }
                 }
                 catch (Exception ex)
@@ -523,6 +538,8 @@ namespace MTCG.Repositories
                         k.Value = 20;
                         cmd.Parameters.Add(k);
                         cmd.ExecuteNonQuery();
+
+                        cmd.Parameters.Clear();
                         //userstats
                         cmd.CommandText = $"INSERT INTO USERSTATS (ID, NAME, ELO, WINS, LOSSES) VALUES (:id, :n, :k, :wins, :loss)";
                         p = cmd.CreateParameter();

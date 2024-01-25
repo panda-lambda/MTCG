@@ -15,9 +15,9 @@ namespace MTCG.Repositories
 
         Guid? GetGuidByUserName(string userName);
 
-        int? GetCoinsByUser(string username);
+        int? GetCoinsByUserId(Guid userId);
 
-        bool SetCoinsByUser(string username, int amount);
+        bool SetCoinsByUserId(Guid userId, int amount);
 
         UserData? GetUserData(Guid userId);
 

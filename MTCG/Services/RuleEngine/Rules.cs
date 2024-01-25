@@ -13,7 +13,7 @@ namespace MTCG.Services.RuleEngine
 
     public class EffectiveVsIneffective : IRule
     {
-        public int Priority { get; } = 3;
+        public int Priority { get; } = 5;
         public bool Applies(Card cardOne, Card cardTwo)
         {
             return ((cardOne.Type == CardType.Spell || cardTwo.Type == CardType.Spell) &&
@@ -31,7 +31,7 @@ namespace MTCG.Services.RuleEngine
 
             if (Applies(cardOne, cardTwo))
             {
-                result.LogRoundPlayerOne = $"Your {cardOne.Name} did double the damage ({cardOne.Damage *2}) due to its {cardOne.Element} element against {cardTwo.Name} with {cardTwo.Element} elementm, which did half the damage ({cardTwo.Damage * 0.5})!";
+                result.LogRoundPlayerOne = $"Your {cardOne.Name} did double the damage ({cardOne.Damage * 2}) due to its {cardOne.Element} element against {cardTwo.Name} with {cardTwo.Element} elementm, which did half the damage ({cardTwo.Damage * 0.5})!";
                 result.LogRoundPlayerTwo = $"Your {cardTwo.Name} did half the damage ({cardTwo.Damage * 0.5}) due to its {cardTwo.Element} element against {cardOne.Name} with {cardOne.Element} element, which did double the damage ({cardOne.Damage * 2})!";
                 if (cardOne.Damage * 2 > cardTwo.Damage * 0.5)
                 {

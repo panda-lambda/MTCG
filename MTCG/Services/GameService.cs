@@ -16,6 +16,7 @@ using System.Net.Http;
 using MTCG.Repositories;
 using Microsoft.Extensions.Configuration;
 using MTCG.Utilities;
+using System.Xml;
 
 namespace MTCG.Services
 {
@@ -29,6 +30,7 @@ namespace MTCG.Services
         private readonly IUserRepository _userRepository;
         private readonly IPackageAndCardRepository _cardRepository;
         private readonly int _kFactor;
+        private readonly int _refund;
 
         public GameService(IBattleLogicService battleLogicService, ISessionService sessionService, IUserRepository userRepository, IPackageAndCardRepository cardRepository, IConfiguration configuration)
         {
@@ -37,7 +39,9 @@ namespace MTCG.Services
             _userRepository = (UserRepository)userRepository ?? throw new ArgumentNullException(nameof(userRepository));
             _cardRepository = (PackageAndCardRepository)cardRepository ?? throw new ArgumentNullException(nameof(cardRepository));
             string k = configuration["AppSettings:kFactor"] ?? throw new InvalidOperationException("JWT Secret Key is not configured properly.");
-            _kFactor = Int32.Parse(k);
+            _kFactor = Int32.Parse(k);     
+            string refundstring= configuration["AppSettings:refund"] ?? throw new InvalidOperationException("JWT Secret Key is not configured properly.");
+            _refund = Int32.Parse(refundstring);
         }
 
 
@@ -45,6 +49,8 @@ namespace MTCG.Services
         {
             playerQueue.Enqueue(player);
             Console.WriteLine("added player: " + player.Name);
+            _sessionService.SetFightingState(player.Id, true);
+
 
             StartBattle();
         }
@@ -79,7 +85,12 @@ namespace MTCG.Services
         private async void ProcessBattle(Battle battle)
         {
             Battle completedBattle = await _battleLogicService.ExecuteBattle(battle);
+
             await UpdateDatabaseWithBattleResults(completedBattle);
+
+            _sessionService.SetFightingState(battle.PlayerOne.Id, false);
+            _sessionService.SetFightingState(battle.PlayerTwo.Id, false);
+
             await ReportLogToPlayer(completedBattle.PlayerOne.Client, completedBattle.LogPlayerOne);
             await ReportLogToPlayer(completedBattle.PlayerTwo.Client, completedBattle.LogPlayerTwo);
 
@@ -88,30 +99,49 @@ namespace MTCG.Services
         {
             await Task.Run(() =>
             {
-                if (battle.Result == null)
+                try
                 {
-                    throw new BattleResultIsNullException();
+                    if (battle.Result == null)
+                    {
+                        throw new BattleResultIsNullException();
+                    }
+                    (battle.PlayerOne.Stats.Elo, battle.PlayerTwo.Stats.Elo) = CalculateElo(battle.PlayerOne, battle.PlayerTwo, (ResultType)battle.Result);
+                    Console.WriteLine("after setting elo");
+                    if (battle.Result == ResultType.FirstPlayerWon)
+                    {
+
+                        int oldCoinsLooser= (int)_userRepository?.GetCoinsByUserId(battle.PlayerTwo.Id);
+                        _userRepository.SetCoinsByUserId(battle.PlayerTwo.Id,oldCoinsLooser + _refund);
+
+                        battle.PlayerOne.Stats.Wins += 1;
+                        battle.PlayerTwo.Stats.Losses += 1;
+
+                    }
+                    else if (battle.Result == ResultType.SecondPlayerWon)
+                    {
+                        int oldCoinsLooser = (int)_userRepository?.GetCoinsByUserId(battle.PlayerOne.Id);
+                        Console.WriteLine("oldcoins ");
+                        _userRepository.SetCoinsByUserId(battle.PlayerTwo.Id, oldCoinsLooser + _refund);
+
+                        battle.PlayerTwo.Stats.Wins += 1;
+                        battle.PlayerOne.Stats.Losses += 1;
+                        battle.PlayerOne.Stats.Games += 1;
+                        battle.PlayerTwo.Stats.Games += 1;
+
+                    }
+                    Console.WriteLine("after setting coins");
+                    _cardRepository.UpdateCardsById(battle.PlayerOne.Id, battle.PlayerOne.Deck);
+                    _cardRepository.UpdateCardsById(battle.PlayerTwo.Id, battle.PlayerTwo.Deck);
+                    Console.WriteLine("after updating cards");
+                    _userRepository.UpdateUserStats(battle.PlayerOne.Id, battle.PlayerOne.Stats);
+                    _userRepository.UpdateUserStats(battle.PlayerTwo.Id, battle.PlayerTwo.Stats);
+                    Console.WriteLine("after uddating stats. ");
                 }
-                (battle.PlayerOne.Stats.Elo, battle.PlayerTwo.Stats.Elo) = CalculateElo(battle.PlayerOne, battle.PlayerTwo, (ResultType)battle.Result);
-                if (battle.Result == ResultType.FirstPlayerWon)
+                catch (Exception e)
                 {
-                    _userRepository.SetCoinsByUser(battle.PlayerTwo.Name, (int)_userRepository?.GetCoinsByUser(battle.PlayerTwo.Name) + 1);
-                    battle.PlayerOne.Stats.Wins += 1;
-                    battle.PlayerTwo.Stats.Losses += 1;
-
+                    Console.WriteLine(e.Message);
+                    Console.WriteLine("exception in updatedatabasewithresults");
                 }
-                else if (battle.Result == ResultType.SecondPlayerWon)
-                {
-                    _userRepository.SetCoinsByUser(battle.PlayerOne.Name, (int)_userRepository?.GetCoinsByUser(battle.PlayerOne.Name) + 1);
-                    battle.PlayerTwo.Stats.Wins += 1;
-                    battle.PlayerOne.Stats.Losses += 1;
-                }
-
-                _cardRepository.UpdateCardsById(battle.PlayerOne.Id, battle.PlayerOne.Deck);
-                _cardRepository.UpdateCardsById(battle.PlayerTwo.Id, battle.PlayerTwo.Deck);
-                _userRepository.UpdateUserStats(battle.PlayerOne.Id, battle.PlayerOne.Stats);
-                _userRepository.UpdateUserStats(battle.PlayerOne.Id, battle.PlayerOne.Stats);
-
 
             });
 

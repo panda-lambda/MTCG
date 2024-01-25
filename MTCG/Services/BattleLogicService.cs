@@ -1,4 +1,5 @@
-﻿using MTCG.Models;
+﻿using Microsoft.Extensions.Configuration;
+using MTCG.Models;
 using MTCG.Repositories;
 using MTCG.Services.RuleEngine;
 using System;
@@ -19,13 +20,15 @@ namespace MTCG.Services
         private readonly SessionService? _sessionService;
         private readonly PackageAndCardService? _packageService;
         private readonly UserRepository? _userRepository;
-        public BattleLogicService(ISessionService sessionService, IPackageAndCardService packageService, IUserRepository userRepository)
+        private readonly int _refund;
+        public BattleLogicService(ISessionService sessionService, IPackageAndCardService packageService, IUserRepository userRepository, IConfiguration configuration)
         {
 
             _sessionService = (SessionService?)sessionService ?? throw new ArgumentNullException(nameof(sessionService));
             _packageService = (PackageAndCardService?)packageService ?? throw new ArgumentNullException(nameof(packageService));
             _userRepository = (UserRepository?)userRepository ?? throw new ArgumentNullException(nameof(userRepository));
-
+            string refundstring = configuration["AppSettings:refund"] ?? throw new InvalidOperationException("JWT Secret Key is not configured properly.");
+            _refund = Int32.Parse(refundstring);
         }
         public async Task<Battle> ExecuteBattle(Battle battle)
         {
@@ -40,15 +43,15 @@ namespace MTCG.Services
 
             while (deckOne?.CardList?.Count > 0 && deckTwo?.CardList?.Count > 0 && battle.Rounds < 101)
             {
-                await Console.Out.WriteLineAsync("starting round " + battle.Rounds);
+                //await Console.Out.WriteLineAsync("starting round " + battle.Rounds);
 
                 Card cardOne = GetRandomCard(deckOne.CardList);
                 Card cardTwo = GetRandomCard(deckTwo.CardList);
-                await Console.Out.WriteLineAsync($"{cardOne.Name} fighting vs {cardTwo.Name}");
+               // await Console.Out.WriteLineAsync($"{cardOne.Name} fighting vs {cardTwo.Name}");
                 battle.LogPlayerOne.Add($"Round {battle.Rounds}");
                 battle.LogPlayerTwo.Add($"Round {battle.Rounds}"); 
                 RoundResult? result = HandleSingleCardFight(cardOne, cardTwo) ?? throw new Exception("Result is null");
-                await Console.Out.WriteLineAsync(result.ToString());
+               // await Console.Out.WriteLineAsync(result.ToString());
                 if (result.LogRoundPlayerOne != null && result.LogRoundPlayerOne != String.Empty )
                     battle.LogPlayerOne.Add(result.LogRoundPlayerOne);
                 if (result.LogRoundPlayerTwo != null && result.LogRoundPlayerTwo != String.Empty)
@@ -98,7 +101,7 @@ namespace MTCG.Services
                 battle.Result = ResultType.SecondPlayerWon;
                 battle.LogPlayerOne.Add($"You lost against {battle.PlayerTwo.Name} after {battle.Rounds} rounds");
                 battle.LogPlayerTwo.Add($"You won against {battle.PlayerOne.Name} after {battle.Rounds} rounds");
-                battle.LogPlayerOne.Add($"You lost your deck with the following cards: {deckOneOld} ");
+                battle.LogPlayerOne.Add($"You lost your deck with the following cards: {deckOneOld} and gained a refund of {_refund} coins.");
                 battle.LogPlayerTwo.Add($"You won {battle.PlayerOne.Name}'s deck with the following cards: {deckOneOld} ");
 
             }

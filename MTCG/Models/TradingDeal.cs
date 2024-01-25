@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
 namespace MTCG.Models
@@ -16,9 +17,12 @@ namespace MTCG.Models
         
 
         public Guid Id { get; set; }
+        [JsonIgnore]
+        public Guid OwnerId { get; set; }
         public Guid CardToTrade { get; set; }
-        public CardType Type { get; set; } 
-        public float MinimumDamage { get; set; }
+        public CardType? Type { get; set; } 
+        public float? MinDamage { get; set; }
 
+       
     }
 }

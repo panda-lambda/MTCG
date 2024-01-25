@@ -14,7 +14,7 @@ namespace MTCG.Utilities
     public class UnauthorizedException : Exception
     {
         public UnauthorizedException(string message) : base(message) { }
-        public UnauthorizedException(): base() { }
+        public UnauthorizedException() : base() { }
     }
     public class InsufficientCoinsException : Exception
     {
@@ -56,7 +56,11 @@ namespace MTCG.Utilities
     public class UserHasNoValidDeckException : Exception
     {
         public UserHasNoValidDeckException(string message) : base(message) { }
-    } 
+    }
+    public class ForbiddenException : Exception
+    {
+        public ForbiddenException(string message) : base(message) { }
+    }
     public class UserCurrentlyFightingException : Exception
     {
         public UserCurrentlyFightingException() : base() { }
@@ -64,7 +68,26 @@ namespace MTCG.Utilities
 
     public class BattleResultIsNullException : Exception
     {
-        public BattleResultIsNullException(): base() { }
+        public BattleResultIsNullException() : base() { }
+    }
+
+    public class InvalidCardForDealException : Exception
+    {
+        public InvalidCardForDealException() : base() { }
+    }
+
+    public class NotFoundException : Exception
+    {
+        public NotFoundException(string message) : base(message) { }
+    }
+    public class DealAlreadyExistsException : Exception
+    {
+        public DealAlreadyExistsException() : base() { }
+    }
+
+    public class NoAvailableTradingDealsException : Exception
+    {
+        public NoAvailableTradingDealsException() : base() { }
     }
 
 

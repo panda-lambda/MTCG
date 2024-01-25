@@ -13,10 +13,12 @@ namespace MTCG.Services
 
 
     {
-        public string AuthenticateAndCreateSession(UserCredentials userCredentials, TcpClient client);
+        string AuthenticateAndCreateSession(UserCredentials userCredentials, TcpClient client);
        
-        public Guid AuthenticateUserAndSession(HttpSvrEventArgs e, string? username);
+        Guid AuthenticateUserAndSession(HttpSvrEventArgs e, string? username);
 
-        public TcpClient? GetClientFromSession(Guid userId);
+        TcpClient? GetClientFromSession(Guid userId);
+        void SetFightingState(Guid userId, bool isFighting);
+
     }
 }

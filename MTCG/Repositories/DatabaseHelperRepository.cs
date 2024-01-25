@@ -53,7 +53,7 @@ namespace MTCG.Repositories
                         cmd.CommandText = "CREATE TABLE IF NOT EXISTS USERDATA (Id UUID PRIMARY KEY, Name VARCHAR(55), Bio VARCHAR(255), Image VARCHAR(50), Coins INTEGER)";
                         cmd.ExecuteNonQuery();
 
-                        cmd.CommandText = "CREATE TABLE IF NOT EXISTS USERSTATS (Id UUID PRIMARY KEY, Name VARCHAR(55), Elo INTEGER, WINS INTEGER, LOSSES INTEGER)";
+                        cmd.CommandText = "CREATE TABLE IF NOT EXISTS USERSTATS (Id UUID PRIMARY KEY, Name VARCHAR(55), Elo INTEGER, WINS INTEGER, LOSSES INTEGER, GAMES INTEGER)";
                         cmd.ExecuteNonQuery();
 
                         cmd.CommandText = "CREATE TABLE IF NOT EXISTS CARDS " +
@@ -93,6 +93,15 @@ namespace MTCG.Repositories
                         "FOREIGN KEY (CardId3) REFERENCES CARDS(Id)," +
                         "FOREIGN KEY (CardId4) REFERENCES CARDS(Id)," +
                         "FOREIGN KEY (CardId5) REFERENCES CARDS(Id))";
+                        cmd.ExecuteNonQuery();
+
+                        cmd.CommandText = "CREATE TABLE IF NOT EXISTS TRADES " +
+                   "(Id UUID PRIMARY KEY," +
+                   "OwnerId UUID REFERENCES Users(Id)," +
+                   "CARDTOTRADE UUID UNIQUE REFERENCES CARDS(Id)," +
+                   "TYPE VARCHAR(250)," +
+                   "MINDAMAGE REAL)";
+
                         cmd.ExecuteNonQuery();
 
 

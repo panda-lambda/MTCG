@@ -1,8 +1,10 @@
 ﻿using MTCG.HttpServer;
 using MTCG.Models;
 using MTCG.Services;
+using MTCG.Utilities;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.Eventing.Reader;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -26,12 +28,14 @@ namespace MTCG.Controller
                 case "POST":
                     if (e.Path.StartsWith("/tradings/"))
                     {
-                        TradeSingleCard(e);
+
+                        ExecuteWithExceptionHandling(e, TradeSingleCard);
                     }
 
                     if (e.Path.StartsWith("/tradings"))
                     {
-                        CreateNewTrading(e);
+                        ExecuteWithExceptionHandling(e, CreateNewTrading);
+
                     }
                     break;
 
@@ -39,7 +43,7 @@ namespace MTCG.Controller
                     {
                         if (e.Path.StartsWith("/tradings/"))
                         {
-                            RemoveTradingDeal(e);
+                            ExecuteWithExceptionHandling(e, RemoveTradingDeal);
                         }
                         break;
                     }
@@ -47,7 +51,7 @@ namespace MTCG.Controller
                 case "GET":
                     if (e.Path.StartsWith("/tradings"))
                     {
-                        GetAvailabeTradingDeals(e);
+                        ExecuteWithExceptionHandling(e, GetAvailabeTradingDeals);
                     }
                     break;
                 default:
@@ -58,39 +62,38 @@ namespace MTCG.Controller
 
         internal void TradeSingleCard(HttpSvrEventArgs e)
         {
+            if(_tradingService.TradeSingleCard(e))
             e.Reply((int)HttpCodes.OK, "Trading deal successfully executed.");
-            e.Reply((int)HttpCodes.UNAUTORIZED, "{\"description\":\"Access token is missing or invalid\"}");
-            e.Reply((int)HttpCodes.FORBIDDEN, "The offered card is not owned by the user, or the requirements are not met (Type, MinimumDamage), or the offered card is locked in the deck.");
-            e.Reply((int)HttpCodes.NOT_FOUND, "The provided deal ID was not found.");
+
         }
         internal void CreateNewTrading(HttpSvrEventArgs e)
         {
-            e.Reply((int)HttpCodes.OK, "Trading deal successfully created.");
-            e.Reply((int)HttpCodes.UNAUTORIZED, "{\"description\":\"Access token is missing or invalid\"}");
-            e.Reply((int)HttpCodes.FORBIDDEN, "The deal contains a card that is not owned by the user or locked in the deck.");
-            e.Reply((int)HttpCodes.CONFLICT, "A deal with this deal ID already exists.");
+            if (_tradingService.CreateNewTradingDeal(e))
+                e.Reply((int)HttpCodes.OK, "{\"description\":\"Trading deal successfully created\"}");
         }
         internal void RemoveTradingDeal(HttpSvrEventArgs e)
         {
-            e.Reply((int)HttpCodes.OK, "Trading deal successfully deleted.");
-            e.Reply((int)HttpCodes.UNAUTORIZED, "{\"description\":\"Access token is missing or invalid\"}");
-            e.Reply((int)HttpCodes.FORBIDDEN, "The deal contains a card that is not owned by the user.");
-            e.Reply((int)HttpCodes.NOT_FOUND, "The provided deal ID was not found.");
-            e.Reply((int)HttpCodes.CONFLICT, "A deal with this deal ID already exists.");
+            if (_tradingService.RemoveTradingDeal(e))
+            {
+                e.Reply((int)HttpCodes.OK, "{\"description\":\"Trading deal successfully deleted\"}");
+            }
+            else
+            {
+                throw new ForbiddenException("The provided deal ID was not found.");
+            }
         }
+
         internal void GetAvailabeTradingDeals(HttpSvrEventArgs e)
         {
-            e.Reply((int)HttpCodes.OK, "There are trading deals available, the response contains these");
-            //content:
-            //  application/json:
-            //    schema:
-            //      type: array
-            //      items:
-            //        $ref: '#/components/schemas/TradingDeal'");
-            e.Reply((int)HttpCodes.NO_CONTENT, "The request was fine, but there are no trading deals available.");
-            e.Reply((int)HttpCodes.UNAUTORIZED, "{\"description\":\"Access token is missing or invalid\"}");
-
-
+            List<TradingDeal> deals = _tradingService.GetTradingDeals(e);
+            if (deals != null && deals.Count > 0)
+            {
+                e.Reply((int)HttpCodes.OK, System.Text.Json.JsonSerializer.Serialize(deals, JsonOptions.NullOptions));
+            }
+            else
+            {
+                throw new NoAvailableTradingDealsException();
+            }
         }
 
 

@@ -28,7 +28,6 @@ namespace MTCG.HttpServer
         /// 
         public HttpSvrEventArgs(TcpClient client)
         {
-            Console.WriteLine("in http überladeneme kontruktor");
             _Client = client;
             PlainMessage = string.Empty;
             Payload = string.Empty;
@@ -132,8 +131,8 @@ namespace MTCG.HttpServer
         public virtual void Reply(int status, string? payload = null)
         {
             string statusDescription;
-            Console.WriteLine("in repyl with" + status);
-            Console.WriteLine("with payload:" + payload);
+            //Console.WriteLine("in repyl with" + status);
+            //Console.WriteLine("with payload:" + payload);
 
             switch (status)
             {
@@ -170,7 +169,7 @@ namespace MTCG.HttpServer
 
             string fullResponse = statusDescription + headers + "\r\n" + payload + "\r\n\n";
 
-            Console.WriteLine("Full response: " + fullResponse + "\n\n\n------");
+           // Console.WriteLine("Full response: " + fullResponse + "\n\n\n------");
 
             try
             {
