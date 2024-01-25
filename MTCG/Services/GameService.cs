@@ -125,10 +125,11 @@ namespace MTCG.Services
 
                         battle.PlayerTwo.Stats.Wins += 1;
                         battle.PlayerOne.Stats.Losses += 1;
-                        battle.PlayerOne.Stats.Games += 1;
-                        battle.PlayerTwo.Stats.Games += 1;
+            
 
                     }
+                    battle.PlayerOne.Stats.Games += 1;
+                    battle.PlayerTwo.Stats.Games += 1;
                     Console.WriteLine("after setting coins");
                     _cardRepository.UpdateCardsById(battle.PlayerOne.Id, battle.PlayerOne.Deck);
                     _cardRepository.UpdateCardsById(battle.PlayerTwo.Id, battle.PlayerTwo.Deck);
@@ -160,6 +161,8 @@ namespace MTCG.Services
 
             int newEloPlayerOne = (int)Math.Round(playerOne.Stats.Elo + _kFactor * (scoreOne - erwOne));
             int newEloPlayerTwo = (int)Math.Round(playerTwo.Stats.Elo + _kFactor * (scoreTwo - erwTwo));
+
+            Console.WriteLine($"player one got {newEloPlayerOne} and player two got {newEloPlayerTwo} elo");
 
             return (newEloPlayerOne, newEloPlayerTwo);
         }

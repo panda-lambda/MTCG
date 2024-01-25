@@ -47,19 +47,16 @@ namespace MTCG.Controller
                 e.Reply((int)HttpCodes.CONFLICT, "{\"description\":\"User is currently fighting, please wait for the fight to finish.\"}");
             }
 
-            catch (InvalidCardForDealException)
+          
+
+            catch (ConflictException ex)
             {
-                e.Reply((int)HttpCodes.FORBIDDEN, "{\"description\":\"The deal contains a card that is not owned by the user or locked in the deck.\"}");
+                e.Reply((int)HttpCodes.CONFLICT, $"{{\"description\":\"{ex}\"}}");
             }
 
-            catch (DealAlreadyExistsException)
+            catch (NoContentException ex)
             {
-                e.Reply((int)HttpCodes.CONFLICT, "{\"description\":\"A deal with this deal ID already exists.\"}");
-            }
-
-            catch (NoAvailableTradingDealsException)
-            {
-                e.Reply((int)HttpCodes.NO_CONTENT, "{\"description\":\"The request was fine, but there are no trading deals available.\"}");
+                e.Reply((int)HttpCodes.NO_CONTENT, $"{{\"description\":\"{ex}\"}}");
             }
 
             catch (ForbiddenException ex)
@@ -74,7 +71,7 @@ namespace MTCG.Controller
 
             catch (Exception ex)
             {
-                Console.WriteLine(ex.Message);
+                Console.WriteLine(ex);
                 e.Reply((int)HttpCodes.INTERNAL_SERVER_ERROR, "{\"msg\":\"Something went wrong.\"}");
             }
 

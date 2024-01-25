@@ -92,7 +92,7 @@ namespace MTCG.Controller
             }
             else
             {
-                throw new NoAvailableTradingDealsException();
+                throw new NoContentException();
             }
         }
 

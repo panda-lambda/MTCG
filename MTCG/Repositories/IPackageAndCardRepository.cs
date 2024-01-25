@@ -27,7 +27,11 @@ namespace MTCG.Repositories
         List<TradingDeal> GetAllTradingDeals();
         bool DeleteTradingDeal(Guid tradeId, Guid userId);
 
-        bool TradeSingleCard(Guid tradeId, Guid userId);
+        bool TradeSingleCard(Guid userIdOffering, Guid userIdBuying, Guid cardToSell, Guid cardToBuy);
+
+        Card? GetSingleCard(Guid cardId);
+
+        Guid? GetCardToTradeFromTradingDeal(Guid tradeId);
 
     }
 }

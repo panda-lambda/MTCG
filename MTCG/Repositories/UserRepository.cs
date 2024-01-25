@@ -333,13 +333,13 @@ namespace MTCG.Repositories
                     using (var cmd = connection.CreateCommand())
                     {
 
-                        cmd.CommandText = @"
-             INSERT INTO USERDATA(Id, Name, Bio, Image)
-             VALUES(:id, :name, :bio, :img)
-             ON CONFLICT(Id) DO UPDATE
-           SET Name = CASE WHEN EXCLUDED.Name IS NOT NULL THEN EXCLUDED.Name ELSE USERDATA.Name END, 
-        Bio = CASE WHEN EXCLUDED.Bio IS NOT NULL THEN EXCLUDED.Bio ELSE USERDATA.Bio END, 
-        Image = CASE WHEN EXCLUDED.Image IS NOT NULL THEN EXCLUDED.Image ELSE USERDATA.Image END";
+                        cmd.CommandText = 
+             $"INSERT INTO USERDATA(Id, Name, Bio, Image)"+
+            " VALUES(:id, :name, :bio, :img)"+
+             "ON CONFLICT(Id) DO UPDATE "+
+          " SET Name = CASE WHEN EXCLUDED.Name IS NOT NULL THEN EXCLUDED.Name ELSE USERDATA.Name END, "+
+        " Bio = CASE WHEN EXCLUDED.Bio IS NOT NULL THEN EXCLUDED.Bio ELSE USERDATA.Bio END, "+
+        " Image = CASE WHEN EXCLUDED.Image IS NOT NULL THEN EXCLUDED.Image ELSE USERDATA.Image END";
 
                         IDbDataParameter idP = cmd.CreateParameter();
                         idP.ParameterName = ":id";
@@ -488,7 +488,7 @@ namespace MTCG.Repositories
                     {
 
 
-                        cmd.CommandText = "SELECT COUNT(*) FROM USERS WHERE NAME = :n";
+                        cmd.CommandText = $"SELECT COUNT(*) FROM USERS WHERE NAME = :n";
                         IDataParameter p = cmd.CreateParameter();
                         p.ParameterName = ":n";
                         p.Value = userCredentials.Username;
@@ -522,7 +522,7 @@ namespace MTCG.Repositories
 
                         cmd.ExecuteNonQuery();
                         //userdata
-                        cmd.CommandText = $"INSERT INTO USERDATA (ID, NAME, COINS) VALUES (:id, :n, :k)";
+                        cmd.CommandText = $"INSERT INTO USERDATA (ID, NAME, COINS ) VALUES (:id, :n, :k )";
                         p = cmd.CreateParameter();
                         p.ParameterName = ":id";
                         p.Value = id;
@@ -537,11 +537,14 @@ namespace MTCG.Repositories
                         k.ParameterName = ":k";
                         k.Value = 20;
                         cmd.Parameters.Add(k);
+
+                        
+                        
                         cmd.ExecuteNonQuery();
 
                         cmd.Parameters.Clear();
                         //userstats
-                        cmd.CommandText = $"INSERT INTO USERSTATS (ID, NAME, ELO, WINS, LOSSES) VALUES (:id, :n, :k, :wins, :loss)";
+                        cmd.CommandText = $"INSERT INTO USERSTATS (ID, NAME, ELO, WINS, LOSSES, GAMES) VALUES (:id, :n, :k, :wins, :loss, :g)";
                         p = cmd.CreateParameter();
                         p.ParameterName = ":id";
                         p.Value = id;
@@ -566,6 +569,11 @@ namespace MTCG.Repositories
                         k.ParameterName = ":loss";
                         k.Value = 0;
                         cmd.Parameters.Add(k);
+
+                        IDataParameter ku = cmd.CreateParameter();
+                        ku.ParameterName = ":g";
+                        ku.Value = 0;
+                        cmd.Parameters.Add(ku);
 
                         cmd.ExecuteNonQuery();
 

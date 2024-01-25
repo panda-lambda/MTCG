@@ -80,14 +80,14 @@ namespace MTCG.Utilities
     {
         public NotFoundException(string message) : base(message) { }
     }
-    public class DealAlreadyExistsException : Exception
+    public class ConflictException : Exception
     {
-        public DealAlreadyExistsException() : base() { }
+        public ConflictException(string message) : base(message) { }
     }
 
-    public class NoAvailableTradingDealsException : Exception
+    public class NoContentException : Exception
     {
-        public NoAvailableTradingDealsException() : base() { }
+        public NoContentException() : base() { }
     }
 
 

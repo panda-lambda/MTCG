@@ -18,8 +18,8 @@ namespace MTCG.Services
 
         public bool CheckForValidDeck( Guid userId);
 
-        public bool RemoveTradingDeal(HttpSvrEventArgs e)
 
+       
 
 
     }

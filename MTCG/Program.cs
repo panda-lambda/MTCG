@@ -51,12 +51,13 @@ internal class Program
          .AddScoped<ITradingService, TradingService>()
          .AddScoped<IDatabaseHelperService, DatabaseHelperService>()
          .AddScoped<IBattleService, BattleService>()
-         .AddScoped <IBattleLogicService, BattleLogicService>()
-         .AddScoped <ISessionServiceWithSessions, SessionService>()
+         .AddScoped<IBattleLogicService, BattleLogicService>()
+         .AddScoped<ISessionServiceWithSessions, SessionService>()
          .AddTransient<UserController>()
          .AddTransient<SessionController>()
          .AddTransient<PackageAndCardController>()
          .AddTransient<BattleController>()
+         .AddTransient<TradingController>()
          .BuildServiceProvider();
 
         using (var scope = serviceProvider.CreateScope())
@@ -136,6 +137,9 @@ internal class Program
         else if (path.StartsWith("/battles") || path.StartsWith("/stats") || path.StartsWith("/scoreboard"))
         {
             return typeof(BattleController);
+        } else if(path.StartsWith("/tradings"))
+        {
+            return typeof(TradingController);
         }
 
 

@@ -100,7 +100,7 @@ namespace MTCG.Repositories
                    "OwnerId UUID REFERENCES Users(Id)," +
                    "CARDTOTRADE UUID UNIQUE REFERENCES CARDS(Id)," +
                    "TYPE VARCHAR(250)," +
-                   "MINDAMAGE REAL)";
+                   "MINDAMAGE DECIMAL(7, 2))";
 
                         cmd.ExecuteNonQuery();
 

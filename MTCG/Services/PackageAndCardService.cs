@@ -197,6 +197,7 @@ namespace MTCG.Services
                     card.Element = EnumHelper.GetEnumByNameFront<ElementType>(card.Name.ToString());
                     card.Monster = EnumHelper.GetEnumByNameEnd<MonsterType>(card.Name.ToString());
                     card.Type = EnumHelper.GetEnumByNameEnd<CardType>(card.Name.ToString());
+                    card.Locked = false;
                 }
 
 

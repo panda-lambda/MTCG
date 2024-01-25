@@ -21,7 +21,7 @@ namespace MTCG.Models
         public Guid OwnerId { get; set; }
         public Guid CardToTrade { get; set; }
         public CardType? Type { get; set; } 
-        public float? MinDamage { get; set; }
+        public float? MinimumDamage { get; set; }
 
        
     }
