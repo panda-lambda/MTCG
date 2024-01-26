@@ -64,7 +64,7 @@ namespace MTCG.Controller
         private void GetStatsByUser(HttpSvrEventArgs e)
         {
             UserStats userStats = _battleService.GetUserStats(e);
-            e.Reply((int)HttpCodes.OK, System.Text.Json.JsonSerializer.Serialize(userStats, JsonOptions.DefaultOptions));
+            e.Reply((int)HttpCodes.OK, System.Text.Json.JsonSerializer.Serialize(userStats));
 
         }
 

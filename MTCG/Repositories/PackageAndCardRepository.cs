@@ -2,6 +2,7 @@
 using MTCG.Models;
 using MTCG.Utilities;
 using System.Data;
+using System.Transactions;
 
 namespace MTCG.Repositories
 {
@@ -211,11 +212,9 @@ namespace MTCG.Repositories
                 {
                     using (var cmd = connection.CreateCommand())
                     {
-                        cmd.CommandText = $"UPDATE CARDS SET OWNERID = :ub WHERE ID = :cts AND OWNERID = :uo  ";
-                        IDataParameter id = cmd.CreateParameter();
-                        id.ParameterName = ":ub";
-                        id.Value = userIdBuying;
-                        cmd.Parameters.Add(id);
+
+                        cmd.CommandText = $"Select * FROM CARDS WHERE (ID = :cts AND OWNERID = :uo) OR ( ID = :cts2 AND OWNERID = :uo2) FOR UPDATE ";
+
 
                         IDataParameter oid = cmd.CreateParameter();
                         oid.ParameterName = ":cts";
@@ -223,6 +222,40 @@ namespace MTCG.Repositories
                         cmd.Parameters.Add(oid);
 
                         IDataParameter uid = cmd.CreateParameter();
+                        uid.ParameterName = ":uo";
+                        uid.Value = userIdOffering;
+                        cmd.Parameters.Add(uid);
+
+                        oid = cmd.CreateParameter();
+                        oid.ParameterName = ":cts2";
+                        oid.Value = cardBuying;
+                        cmd.Parameters.Add(oid);
+
+                        uid = cmd.CreateParameter();
+                        uid.ParameterName = ":uo2";
+                        uid.Value = userIdBuying;
+                        cmd.Parameters.Add(uid);
+                        using (var reader = cmd.ExecuteReader())
+                        {
+                            if (!reader.Read())
+                            {
+                                throw new Exception("Something went wrong while trading!");
+                            }
+                        }
+                        cmd.Parameters.Clear();
+
+                        cmd.CommandText = $"UPDATE CARDS SET OWNERID = :ub WHERE ID = :cts AND OWNERID = :uo   ";
+                        IDataParameter id = cmd.CreateParameter();
+                        id.ParameterName = ":ub";
+                        id.Value = userIdBuying;
+                        cmd.Parameters.Add(id);
+
+                        oid = cmd.CreateParameter();
+                        oid.ParameterName = ":cts";
+                        oid.Value = cardToSell;
+                        cmd.Parameters.Add(oid);
+
+                        uid = cmd.CreateParameter();
                         uid.ParameterName = ":uo";
                         uid.Value = userIdOffering;
                         cmd.Parameters.Add(uid);
@@ -257,7 +290,7 @@ namespace MTCG.Repositories
                 {
                     transaction.Rollback();
                     Console.WriteLine(ex);
-                    throw new InternalServerErrorException(ex.Message + " in gettradingdealsbyTradingdeal -packagerepository");
+                    throw new Exception("Something went wrong while trading cards!");
                 }
 
             }
@@ -272,7 +305,7 @@ namespace MTCG.Repositories
                 {
                     using (var cmd = connection.CreateCommand())
                     {
-                        cmd.CommandText = $"Select OWNERID, CARDTOTRADE FROM TRADES WHERE ID = :id ";
+                        cmd.CommandText = $"Select OWNERID, CARDTOTRADE FROM TRADES WHERE ID = :id FOR UPDATE";
                         IDataParameter id = cmd.CreateParameter();
                         id.ParameterName = ":id";
                         id.Value = tradeId;
@@ -335,7 +368,7 @@ namespace MTCG.Repositories
                 catch (Exception ex)
                 {
                     transaction.Rollback();
-                    throw new InternalServerErrorException(ex.Message + " removetradingdeal -packagerepository");
+                    throw new Exception("Something went wrong while deleting the trade!");
                 }
                 return rowsAffected > 0;
             }
@@ -463,7 +496,7 @@ namespace MTCG.Repositories
         public Deck GetDeckByUser(Guid userId)
         {
             using var connection = _connectionFactory.CreateConnection();
-            Deck deck = new Deck();
+            Deck deck = new();
             deck.CardList = new List<Card>();
 
             using (var cmd = connection.CreateCommand())
@@ -557,18 +590,44 @@ namespace MTCG.Repositories
         public void UpdateCardsById(Guid userId, Deck deck)
         {
             using var connection = _connectionFactory.CreateConnection();
-            try
+            using (var transaction = connection.BeginTransaction())
             {
-                if (deck != null && deck.CardList != null && deck.CardList.Count == 0)
+                try
                 {
-                    return;
-                }
-                using (var transaction = connection.BeginTransaction())
-                {
+                    if (deck != null && deck.CardList != null && deck.CardList.Count == 0)
+                    {
+                        return;
+                    }
 
                     using (var cmd = connection.CreateCommand())
                     {
+                        string inClause = $"SELECT *  FROM CARDS WHERE ID IN (";
 
+
+                        for (int i = 0; i < deck?.CardList?.Count; i++)
+                        {
+                            string paramName = ":cardId" + i;
+                            inClause += paramName;
+
+                            if (i < deck.CardList.Count - 1)
+                            {
+                                inClause += ", ";
+                            }
+                            IDataParameter cardP = cmd.CreateParameter();
+                            cardP.ParameterName = paramName;
+                            cardP.Value = deck.CardList[i].Id;
+                            cmd.Parameters.Add(cardP);
+                        }
+
+                        inClause += " )FOR UPDATE";
+                        cmd.CommandText = inClause;
+                        using (var reader = cmd.ExecuteReader())
+                        {
+                            
+                        }
+                        cmd.Parameters.Clear();               
+
+                        //--------
                         cmd.CommandText = $"UPDATE DECKS SET CardId1 = NULL, CardId2 = NULL, CardId3 = NULL, CardId4 = NULL WHERE OwnerId = :uid";
                         IDataParameter p = cmd.CreateParameter();
                         p.ParameterName = ":uid";
@@ -578,7 +637,7 @@ namespace MTCG.Repositories
 
                         cmd.Parameters.Clear();
                         //now delete cards from user
-                        string inClause = "UPDATE CARDS SET OwnerId = :uid WHERE Id IN (";
+                         inClause = "UPDATE CARDS SET OwnerId = :uid WHERE Id IN (";
 
                         for (int i = 0; i < deck?.CardList?.Count; i++)
                         {
@@ -606,11 +665,14 @@ namespace MTCG.Repositories
                         cmd.Parameters.Clear();
                     }
                     transaction.Commit();
+
                 }
-            }
-            catch (Exception ex)
-            {
-                throw new InternalServerErrorException(ex.Message + " in updatecardsbyid -packagerepository");
+                catch (Exception ex)
+                {
+                    transaction.Rollback();
+                    Console.WriteLine(ex);
+                    throw new Exception("Something went wrong while updating the cards after the battle!");
+                }
             }
         }
 
@@ -794,7 +856,7 @@ namespace MTCG.Repositories
                             Console.WriteLine("exc in adding cards and package");
                             Console.WriteLine(ex.Message);
                             transaction.Rollback();
-                            throw;
+                            throw new Exception("Something went wrong while adding cards to the packages!");
                         }
                     }
                 }
@@ -842,7 +904,7 @@ namespace MTCG.Repositories
                                 {
                                     Console.WriteLine("no money to buy");
                                     throw new ForbiddenException("Not enough money for buying a card package");
-                                  
+
 
                                 }
                             }
@@ -978,13 +1040,13 @@ namespace MTCG.Repositories
                         return cardList;
                     }
 
-                   
+
                     catch (Exception ex)
                     {
                         transaction.Rollback();
                         Console.WriteLine(ex.Message);
                         throw;
-                       
+
                     }
                 }
             }
@@ -992,66 +1054,64 @@ namespace MTCG.Repositories
 
         public bool ConfigureDeckForUser(List<Guid> cardList, Guid user)
         {
-            try
+            using (var connection = _connectionFactory.CreateConnection())
             {
-                using (var connection = _connectionFactory.CreateConnection())
+                using (var transaction = connection.BeginTransaction())
                 {
-                    Console.WriteLine("in configure deck");
-
-                    using (var cmd = connection.CreateCommand())
+                    try
                     {
-                        Guid newId = Guid.NewGuid();
+                        Console.WriteLine("in configure deck");
 
-                        cmd.CommandText =
-            $"INSERT INTO DECKS (Id, OwnerId, CardId1, CardId2, CardId3, CardId4) " +
-           " VALUES (:id,:owner, :card1, :card2, :card3, :card4) " +
-            "ON CONFLICT (OwnerId) DO UPDATE " +
-            "SET CardId1 = EXCLUDED.CardId1, " +
-                "CardId2 = EXCLUDED.CardId2, " +
-                "CardId3 = EXCLUDED.CardId3, " +
-                "CardId4 = EXCLUDED.CardId4";
-
-                        IDbDataParameter idP = cmd.CreateParameter();
-                        idP.ParameterName = ":id";
-                        idP.Value = newId;
-                        cmd.Parameters.Add(idP);
-
-                        IDbDataParameter ownerP = cmd.CreateParameter();
-                        ownerP.ParameterName = ":owner";
-                        ownerP.Value = user;
-                        cmd.Parameters.Add(ownerP);
-
-                        for (int i = 0; i < 4; i++)
+                        using (var cmd = connection.CreateCommand())
                         {
-                            IDbDataParameter cardParam = cmd.CreateParameter();
-                            cardParam.ParameterName = $":card{i + 1}";
-                            cardParam.Value = cardList[i];
-                            cmd.Parameters.Add(cardParam);
+                            Guid newId = Guid.NewGuid();
+
+                            cmd.CommandText =
+                $"INSERT INTO DECKS (Id, OwnerId, CardId1, CardId2, CardId3, CardId4) " +
+               " VALUES (:id,:owner, :card1, :card2, :card3, :card4) " +
+                "ON CONFLICT (OwnerId) DO UPDATE " +
+                "SET CardId1 = EXCLUDED.CardId1, " +
+                    "CardId2 = EXCLUDED.CardId2, " +
+                    "CardId3 = EXCLUDED.CardId3, " +
+                    "CardId4 = EXCLUDED.CardId4";
+
+                            IDbDataParameter idP = cmd.CreateParameter();
+                            idP.ParameterName = ":id";
+                            idP.Value = newId;
+                            cmd.Parameters.Add(idP);
+
+                            IDbDataParameter ownerP = cmd.CreateParameter();
+                            ownerP.ParameterName = ":owner";
+                            ownerP.Value = user;
+                            cmd.Parameters.Add(ownerP);
+
+                            for (int i = 0; i < 4; i++)
+                            {
+                                IDbDataParameter cardParam = cmd.CreateParameter();
+                                cardParam.ParameterName = $":card{i + 1}";
+                                cardParam.Value = cardList[i];
+                                cmd.Parameters.Add(cardParam);
+                            }
+
+                            cmd.ExecuteNonQuery();
+                            transaction.Commit();
                         }
-
-                        cmd.ExecuteNonQuery();
+                        return true;
                     }
+
+
+
+                    catch (Exception ex)
+                    {
+                        transaction.Rollback();
+                        Console.WriteLine("Fehler: " + ex.Message);
+                        throw new Exception("Something went wrong while updating the deck with your cards");
+
+                    }
+
                 }
-                return true;
-
-
-
-
 
             }
-            catch (Exception ex)
-            {
-                Console.WriteLine("Fehler: " + ex.Message);
-                if (ex.InnerException != null)
-                {
-                    Console.WriteLine("Innere Ausnahme: " + ex.InnerException.Message);
-                }
-                Console.WriteLine("StackTrace: " + ex.StackTrace);
-                return false;
-            }
-
-
-
         }
     }
 }

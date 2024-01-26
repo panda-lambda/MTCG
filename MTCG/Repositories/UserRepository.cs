@@ -1,19 +1,7 @@
 ﻿using MTCG.Data;
 using MTCG.Models;
 using MTCG.Utilities;
-using Npgsql;
-using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Security.Cryptography.X509Certificates;
-using System.Text;
-using System.Threading.Tasks;
-using System.Transactions;
-using System.Xml.Linq;
-using static System.Net.Mime.MediaTypeNames;
 
 namespace MTCG.Repositories
 {
@@ -230,6 +218,8 @@ namespace MTCG.Repositories
                 {
                     Console.WriteLine(ex.Message);
                     Console.WriteLine("exception in userrepository getting hashed pw");
+                    throw new Exception("Something went wrong while logging in!");
+
                 }
                 return null;
 
@@ -276,36 +266,53 @@ namespace MTCG.Repositories
 
         public bool SetCoinsByUserId(Guid userId, int amount)
         {
-            Console.WriteLine("in set goins with " + amount);
+
             using (var connection = _connectionFactory.CreateConnection())
             {
-                try
+
+                using (var transaction = connection.BeginTransaction())
                 {
-                    using (var cmd = connection.CreateCommand())
+                    try
                     {
-                        cmd.CommandText = "UPDATE USERDATA SET COINS = :coins WHERE id = :user";
+                        using (var cmd = connection.CreateCommand())
+                        {
+
+                            cmd.CommandText = "SELECT COINS FROM USERDATA WHERE Id= :n FOR UPDATE";
+                            IDataParameter n = cmd.CreateParameter();
+                            n.ParameterName = ":n";
+                            n.Value = userId;
+                            cmd.Parameters.Add(n);
+                            using (var reader = cmd.ExecuteReader())
+                            {
+
+                            }
+                            cmd.Parameters.Clear();
+
+                            cmd.CommandText = "UPDATE USERDATA SET COINS = :coins WHERE id = :user";
 
 
-                        IDataParameter c = cmd.CreateParameter();
-                        c.ParameterName = ":coins";
-                        c.Value = amount;
-                        cmd.Parameters.Add(c);
+                            IDataParameter c = cmd.CreateParameter();
+                            c.ParameterName = ":coins";
+                            c.Value = amount;
+                            cmd.Parameters.Add(c);
 
-                        IDataParameter u = cmd.CreateParameter();
-                        u.ParameterName = ":user";
-                        u.Value = userId;
-                        cmd.Parameters.Add(u);
+                            IDataParameter u = cmd.CreateParameter();
+                            u.ParameterName = ":user";
+                            u.Value = userId;
+                            cmd.Parameters.Add(u);
 
 
-                        int rowsAffected = cmd.ExecuteNonQuery();
-                        return rowsAffected > 0;
+                            int rowsAffected = cmd.ExecuteNonQuery();
+                            return rowsAffected > 0;
+                        }
                     }
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine(ex.Message);
+                    catch (Exception ex)
+                    {
+                        transaction.Rollback();
+                        Console.WriteLine(ex.Message);
+                        throw new Exception("Something went wrong while updating the coin count!");
 
-                    return false;
+                    }
                 }
             }
         }
@@ -314,54 +321,61 @@ namespace MTCG.Repositories
         {
             using (var connection = _connectionFactory.CreateConnection())
             {
-                try
+                var rowsAffected = 0;
+                using (var transaction = connection.BeginTransaction())
                 {
-                    using (var cmd = connection.CreateCommand())
+                    try
                     {
+                        using (var cmd = connection.CreateCommand())
+                        {
 
-                        cmd.CommandText =
-             $"INSERT INTO USERDATA(Id, Name, Bio, Image)" +
-            " VALUES(:id, :name, :bio, :img)" +
-             "ON CONFLICT(Id) DO UPDATE " +
-          " SET Name = CASE WHEN EXCLUDED.Name IS NOT NULL THEN EXCLUDED.Name ELSE USERDATA.Name END, " +
-        " Bio = CASE WHEN EXCLUDED.Bio IS NOT NULL THEN EXCLUDED.Bio ELSE USERDATA.Bio END, " +
-        " Image = CASE WHEN EXCLUDED.Image IS NOT NULL THEN EXCLUDED.Image ELSE USERDATA.Image END";
+                            cmd.CommandText =
+                 $"INSERT INTO USERDATA(Id, Name, Bio, Image)" +
+                " VALUES(:id, :name, :bio, :img)" +
+                 "ON CONFLICT(Id) DO UPDATE " +
+              " SET Name = CASE WHEN EXCLUDED.Name IS NOT NULL THEN EXCLUDED.Name ELSE USERDATA.Name END, " +
+            " Bio = CASE WHEN EXCLUDED.Bio IS NOT NULL THEN EXCLUDED.Bio ELSE USERDATA.Bio END, " +
+            " Image = CASE WHEN EXCLUDED.Image IS NOT NULL THEN EXCLUDED.Image ELSE USERDATA.Image END";
 
-                        IDbDataParameter idP = cmd.CreateParameter();
-                        idP.ParameterName = ":id";
-                        idP.Value = userId;
-                        cmd.Parameters.Add(idP);
+                            IDbDataParameter idP = cmd.CreateParameter();
+                            idP.ParameterName = ":id";
+                            idP.Value = userId;
+                            cmd.Parameters.Add(idP);
 
-                        IDbDataParameter name = cmd.CreateParameter();
-                        name.ParameterName = ":name";
-                        name.Value = userData.Name;
-                        cmd.Parameters.Add(name);
+                            IDbDataParameter name = cmd.CreateParameter();
+                            name.ParameterName = ":name";
+                            name.Value = userData.Name;
+                            cmd.Parameters.Add(name);
 
-                        IDbDataParameter bio = cmd.CreateParameter();
-                        bio.ParameterName = ":bio";
-                        bio.Value = userData.Bio;
-                        cmd.Parameters.Add(bio);
+                            IDbDataParameter bio = cmd.CreateParameter();
+                            bio.ParameterName = ":bio";
+                            bio.Value = userData.Bio;
+                            cmd.Parameters.Add(bio);
 
-                        IDbDataParameter img = cmd.CreateParameter();
-                        img.ParameterName = ":img";
-                        img.Value = userData.Image;
-                        cmd.Parameters.Add(img);
+                            IDbDataParameter img = cmd.CreateParameter();
+                            img.ParameterName = ":img";
+                            img.Value = userData.Image;
+                            cmd.Parameters.Add(img);
 
-                        cmd.ExecuteNonQuery();
+                            rowsAffected = cmd.ExecuteNonQuery();
 
-                        Console.WriteLine("user updated");
-                        Console.WriteLine(userData);
+                            Console.WriteLine("user updated");
+                            Console.WriteLine(userData);
 
-                        return true;
+                         
+                        }
                     }
-                }
-                catch (Exception e)
-                {
-                    Console.WriteLine("Exeption in UserRepository UpdateUserdata:");
-                    Console.WriteLine(e.Message);
-                    return false;
-                }
+                    catch (Exception e)
+                    {
+                        transaction.Rollback();
+                        Console.WriteLine("Exeption in UserRepository UpdateUserdata:");
+                        Console.WriteLine(e.Message);
+                        throw new Exception("Something went wrong while updating the user data!");
 
+                    }
+                    transaction.Commit();
+                    return rowsAffected > 0;
+                }
             }
         }
 
@@ -437,6 +451,9 @@ namespace MTCG.Repositories
                                 {
                                     coins = reader.GetInt32(4);
                                 }
+
+                                Console.WriteLine("bio " + bio);
+                                Console.WriteLine("image "+ img);
                                 Console.WriteLine("coins hat " + coins + " !");
                                 return new UserData
                                 {
@@ -453,7 +470,7 @@ namespace MTCG.Repositories
                 catch (Exception e)
                 {
                     Console.WriteLine(e.Message);
-                    throw new UserNotFoundException("User not found");
+                    throw new NotFoundException("User not found");
 
 
                 }
@@ -562,12 +579,20 @@ namespace MTCG.Repositories
                         return true;
 
                     }
+
+                    catch (ConflictException ex)
+                    {
+                        throw;
+                    }
                     catch (Exception ex)
                     {
                         Console.WriteLine("exception in register user repository");
                         Console.WriteLine(ex.Message);
+
                         transaction.Rollback();
-                        throw;
+                        throw new Exception("Something went wrong while registering!");
+
+
                     }
 
 

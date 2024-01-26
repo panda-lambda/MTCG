@@ -62,7 +62,7 @@ namespace MTCG.Controller
                 catch (Exception ex)
                 {
                     Console.WriteLine(ex.Message);
-                    e.Reply((int)HttpCodes.BAD_REQUEST, "{\"description\":\"User could not be logged in - got exception.\"}");
+                    e.Reply((int)HttpCodes.UNAUTORIZED, "{\"description\":\"Invalid username/password provided.\"}");
                 }
             }
         }

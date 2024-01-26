@@ -17,7 +17,7 @@ namespace MTCG.Services
 {
     public class PackageAndCardService : IPackageAndCardService
     {
-
+        private static readonly object _lock = new();
         private ISessionService _sessionService;
         private IPackageAndCardRepository _packageAndCardRepository;
         private IUserRepository _userRepository;
@@ -34,9 +34,12 @@ namespace MTCG.Services
 
             Guid userId = _sessionService.AuthenticateUserAndSession(e, null);
 
-            return _packageAndCardRepository.BuyPackage((Guid)userId);
-
-
+            List<Card>? cards;
+            lock (_lock)
+            {
+                cards = _packageAndCardRepository.BuyPackage((Guid)userId);
+            }
+            return cards;
 
         }
 
@@ -47,7 +50,11 @@ namespace MTCG.Services
             return _packageAndCardRepository.GetDeckByUser(userId);
         }
 
-
+        public int SellCards(HttpSvrEventArgs e)
+        {
+            Guid userId = _sessionService.AuthenticateUserAndSession(e, null);
+            return 0;
+        }
 
         public List<Card>? GetCardsByUser(HttpSvrEventArgs e)
         {
@@ -134,17 +141,17 @@ namespace MTCG.Services
             Package cardPackage = new Package { PackageId = Guid.NewGuid() };
             cardPackage.CardList = JsonConvert.DeserializeObject<List<Card>>(e.Payload);
 
-            if (cardPackage.CardList == null || cardPackage.CardList.Count !=5)
+            if (cardPackage.CardList == null || cardPackage.CardList.Count != 5)
             {
                 throw new BadRequestException("No cards in Package or invalid card count.");
             }
             List<Card> existingCards = _packageAndCardRepository.GetAllCards();
 
-            if(cardPackage.CardList.Select(card =>card.Id).Intersect(existingCards.Select(card => card.Id)).Any())
+            if (cardPackage.CardList.Select(card => card.Id).Intersect(existingCards.Select(card => card.Id)).Any())
             {
                 throw new Exception("At least one card in the packages already exists");
-            }           
-                   
+            }
+
 
             foreach (Card card in cardPackage.CardList)
             {
@@ -161,7 +168,12 @@ namespace MTCG.Services
                 Console.WriteLine("card:" + card.Name);
                 Console.WriteLine("id: " + card.Id + "");
             }
-            return _packageAndCardRepository.AddPackage(cardPackage);
+            bool res = false;
+            lock (_lock)
+            {
+                res = _packageAndCardRepository.AddPackage(cardPackage);
+            }
+            return res;
         }
 
     }

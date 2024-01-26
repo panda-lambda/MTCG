@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace MTCG.Utilities
+﻿namespace MTCG.Utilities
 {
     public class EnumHelper
     {

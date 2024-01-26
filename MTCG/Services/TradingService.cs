@@ -3,11 +3,6 @@ using MTCG.Models;
 using MTCG.Repositories;
 using MTCG.Utilities;
 using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace MTCG.Services
 {

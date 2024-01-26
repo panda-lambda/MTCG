@@ -33,15 +33,9 @@ namespace MTCG.Controller
             catch (UserNotCardOwnerException ex)
             {
                 Console.WriteLine("ex dort: " + ex.Message);
-
                 e.Reply((int)HttpCodes.FORBIDDEN, "{\"description\":\"At least one of the provided cards does not belong to the user or is not available..\"}");
-
-            }
-
-            catch (UserHasNoValidDeckException)
-            {
-                e.Reply((int)HttpCodes.CONFLICT, "{\"description\":\"User has no valid deck.\"}");
-            }
+            }                             
+           
 
             catch (UserCurrentlyFightingException)
             {
@@ -51,35 +45,33 @@ namespace MTCG.Controller
 
             catch (ConflictException ex)
             {
-                e.Reply((int)HttpCodes.CONFLICT, $"{{\"description\":\"{ex}\"}}");
+                e.Reply((int)HttpCodes.CONFLICT, $"{{\"description\":\"{ex.Message}\"}}");
             }
 
             catch (NoContentException ex)
             {
-                e.Reply((int)HttpCodes.NO_CONTENT, $"{{\"description\":\"{ex}\"}}");
+                e.Reply((int)HttpCodes.NO_CONTENT, $"{{\"description\":\"{ex.Message}\"}}");
             }
 
             catch (ForbiddenException ex)
             {
-                e.Reply((int)HttpCodes.FORBIDDEN, $"{{\"description\":\"{ex}\"}}");
+                e.Reply((int)HttpCodes.FORBIDDEN, $"{{\"description\":\"{ex.Message}\"}}");
             }
 
             catch (NotFoundException ex)
             {
-                e.Reply((int)HttpCodes.NOT_FOUND, $"{{\"description\":\"{ex}\"}}");
+                e.Reply((int)HttpCodes.NOT_FOUND, $"{{\"description\":\"{ex.Message}\"}}");
             }
             catch (BadRequestException ex)
             {
-                e.Reply((int)HttpCodes.NOT_FOUND, $"{{\"description\":\"{ex}\"}}");
+                e.Reply((int)HttpCodes.NOT_FOUND, $"{{\"description\":\"{ex.Message}\"}}");
              }
 
             catch (Exception ex)
             {
                 Console.WriteLine(ex);
-                e.Reply((int)HttpCodes.INTERNAL_SERVER_ERROR, "{\"description\":\"Something went wrong.\"}");
+                e.Reply((int)HttpCodes.INTERNAL_SERVER_ERROR, $"{{\"description\":\"{ex.Message}\"}}");
             }
-
-
 
 
         }

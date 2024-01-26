@@ -77,7 +77,7 @@ namespace MTCG.Controller
             UserData? userData = _userService.GetUserData(e);
             if (userData == null)
             {
-                throw new UserNotFoundException("User not found");
+                throw new NotFoundException("User not found");
             }
 
             e.Reply((int)HttpCodes.OK, System.Text.Json.JsonSerializer.Serialize(userData,JsonOptions.NullOptions));

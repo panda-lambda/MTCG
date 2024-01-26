@@ -43,6 +43,10 @@ namespace MTCG.Controller
                 {
                     ExecuteWithExceptionHandling(e, BuyCardPackage);
                 }
+                if (e.Path.StartsWith("/cards"))
+                {
+                    ExecuteWithExceptionHandling(e, SellCards);
+                }
             }
 
             else if (e.Method == "GET")
@@ -65,6 +69,7 @@ namespace MTCG.Controller
                 {
                     ExecuteWithExceptionHandling(e, ConfigureDeck);
                 }
+                
             }
 
             else { e.Reply((int)HttpCodes.BAD_REQUEST, "{\"description\":\"Not a valid Http Request!\"}"); }
@@ -80,6 +85,18 @@ namespace MTCG.Controller
             else
             {
                 throw new InternalServerErrorException("Something went wrong!");
+            }
+        } private void SellCards(HttpSvrEventArgs e)
+        {
+            int count = 0 ; 
+            count =  _packageService.SellCards(e));
+            if (count != 0)
+            {
+                e.Reply((int)HttpCodes.OK, "{\"description\":\" You sold "+count+ " and got "+Math.Floor(count/2.0)+".\"}");
+            }
+            else
+            {
+                e.Reply((int)HttpCodes.CONFLICT, "{\"description\":\"The cards you offered did not exist or you are not the owner!\"}");
             }
         }
 

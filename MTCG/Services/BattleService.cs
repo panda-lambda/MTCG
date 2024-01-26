@@ -38,14 +38,14 @@ namespace MTCG.Services
 
             if (!CheckForValidDeck((Guid)userId))
             {
-                throw new UserHasNoValidDeckException("");
+                throw new ForbiddenException("Your deck is not valid to start a battle!");
             }
             Player player = new Player
             {
                 Id = (Guid)userId,
-                Deck = _packageService?.GetDeckByUser(e),
-                Stats = _userRepository?.GetUserStats((Guid)userId),
-                Name = _userRepository?.GetNameByGuid(userId),
+                Deck = _packageService!.GetDeckByUser(e),
+                Stats = _userRepository!.GetUserStats((Guid)userId),
+                Name = _userRepository!.GetNameByGuid(userId),
                 Client = e.Client
             };
 

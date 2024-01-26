@@ -30,9 +30,9 @@ namespace MTCG.Controller
                     {
 
                         ExecuteWithExceptionHandling(e, TradeSingleCard);
+                     
                     }
-
-                    if (e.Path.StartsWith("/tradings"))
+                    else if (e.Path.StartsWith("/tradings"))
                     {
                         ExecuteWithExceptionHandling(e, CreateNewTrading);
 

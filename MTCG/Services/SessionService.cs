@@ -4,11 +4,9 @@ using MTCG.HttpServer;
 using MTCG.Models;
 using MTCG.Repositories;
 using MTCG.Utilities;
-using System;
 using System.Collections.Concurrent;
 using System.IdentityModel.Tokens.Jwt;
 using System.Net.Sockets;
-using System.Reflection.PortableExecutable;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -20,10 +18,11 @@ namespace MTCG.Services
         private readonly UserRepository? _userRepository;
  
         private readonly ConcurrentDictionary<Guid, UserSession> _sessions;
-
+        private readonly object _lock = new();
         private readonly string? _key;
         private readonly bool _inDebugMode;
         private const int KeySize = 32;
+        private readonly bool _fakeToken;
 
 
         public SessionService( IUserRepository userRepository, IConfiguration configuration)
@@ -38,6 +37,13 @@ namespace MTCG.Services
             {
                 bool.TryParse(debugConfig, out _inDebugMode);
             }
+
+            string? tokenConfig = configuration["AppSettings:FakeToken"]?? throw new InvalidOperationException("FakeToken is not configured properly.");
+            if (!string.IsNullOrEmpty(tokenConfig))
+            {
+                bool.TryParse(debugConfig, out _fakeToken);
+            }
+
         }
         public Guid AuthenticateUserAndSession(HttpSvrEventArgs e, string? username)
         {
@@ -79,21 +85,11 @@ namespace MTCG.Services
 
         public string AuthenticateAndCreateSession(UserCredentials userCredentials, TcpClient client)
         {
-            try
-            {
-
-                if (client == null)
-                {
-                    Console.WriteLine(" client is NULL in auth and create session");
-                }
-                else
-                {
-                    Console.WriteLine("client is NOT NUll in auth and create session");
-                }
+                
                 UserCredentials? user = _userRepository?.GetHashByUsername(userCredentials.Username);
                 if (user == null || user.Username == null)
                 {
-                    throw new UserNotFoundException("");
+                    throw new NotFoundException("User could not be found, please register before logging in.");
                 }
 
                 if (string.IsNullOrEmpty(user.Password) || !(user.Id.HasValue) || !VerifyPassword(userCredentials.Password, user.Password))
@@ -101,17 +97,13 @@ namespace MTCG.Services
                     throw new UnauthorizedException();
                 }
                 Console.WriteLine($"User {user.Username} with hased pw: {user.Password}");
-                return CreateSession((Guid)user.Id, userCredentials.Username, client);
-            }
-            catch (Exception e)
+            string res = string.Empty;
+            lock (_lock)
             {
-                Console.WriteLine("something wnent wrong in authenticae and create session");
-                Console.WriteLine(e.Message);
-                return "";
+               res = CreateSession((Guid)user.Id, userCredentials.Username, client);
             }
 
-
-
+            return res;
         }
 
 
@@ -124,14 +116,7 @@ namespace MTCG.Services
             Console.WriteLine($"Sessioncreated at {createdAt} and expires at {expiresAt}");
 
             var session = new UserSession { Id = sessionId, Username = username, Token = token, CreatedAt = createdAt, ExpiresAt = expiresAt, TCPClient = client };
-            if (session.TCPClient != null)
-            {
-                Console.WriteLine("client in createSession NOT NULL!\n\n\n");
-            }
-            else
-            {
-                Console.WriteLine("client in createSession IS NULL!\n\n\n");
-            }
+           
             _sessions.TryAdd(userId, session);
             return session.Token;
 
@@ -167,7 +152,7 @@ namespace MTCG.Services
             try
             {
                 Console.WriteLine("token string last 10:" + token.Substring(token.Length - 10) + "\n");
-                if ("-mtcgToken" == token.Substring(token.Length - 10))
+                if (_fakeToken && "-mtcgToken" == token.Substring(token.Length - 10))
                 {
                     string userName = token.Replace("-mtcgToken", "");
                     userName = userName.Replace("Bearer ", "");

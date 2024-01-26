@@ -1,13 +1,8 @@
 ﻿using MTCG.HttpServer;
 using MTCG.Models;
 using MTCG.Repositories;
-using System;
-using System.Data;
-using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
-using System.Text;
 using MTCG.Utilities;
-using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
 
 
@@ -51,10 +46,8 @@ namespace MTCG.Services
 
             UserCredentials userCredentials = new() { Username = username, Password = hashedPassword };
 
-            if (_userRepository != null && _userRepository.registerUser(userCredentials))
-                return true;
-            else
-                return false;
+            return _userRepository != null && _userRepository.registerUser(userCredentials);
+           
 
 
         }

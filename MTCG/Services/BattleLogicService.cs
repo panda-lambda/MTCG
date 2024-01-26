@@ -2,14 +2,6 @@
 using MTCG.Models;
 using MTCG.Repositories;
 using MTCG.Services.RuleEngine;
-using System;
-using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
-using System.Linq;
-using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
-using static System.Collections.Specialized.BitVector32;
 
 
 namespace MTCG.Services
@@ -126,7 +118,7 @@ namespace MTCG.Services
             if (deck == null)
                 return String.Empty;
             string result = String.Empty;
-            foreach (Card card in deck?.CardList)
+            foreach (Card card in deck!.CardList)
             {
                 result += card.Name + $"({card.Damage}), ";
             }
@@ -145,12 +137,10 @@ namespace MTCG.Services
         {
             RoundResult? result = new();
             if (cardOne == null || cardTwo == null)
-                throw new Exception("No cards in handle Single fight!");
+                throw new Exception("A round did not have any cards to fight!");
 
             Engine engine = new();
             result = engine.Evaluate(cardOne, cardTwo);
-
-
 
             return result;
         }
