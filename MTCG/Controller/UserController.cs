@@ -80,7 +80,7 @@ namespace MTCG.Controller
                 throw new UserNotFoundException("User not found");
             }
 
-            e.Reply((int)HttpCodes.OK, System.Text.Json.JsonSerializer.Serialize(userData),JsonOptions.NullOptions);
+            e.Reply((int)HttpCodes.OK, System.Text.Json.JsonSerializer.Serialize(userData,JsonOptions.NullOptions));
         }
 
 
