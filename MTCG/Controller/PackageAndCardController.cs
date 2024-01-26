@@ -86,11 +86,32 @@ namespace MTCG.Controller
         private void GetDeckByUser(HttpSvrEventArgs e)
         {
             Deck? deck = _packageService.GetDeckByUser(e);
-            if (deck == null || deck.CardList?.Count == 0)
+            if (deck == null || deck.CardList == null || deck.CardList?.Count == 0)
             {
                 throw new NoContentException("The request was fine, but the deck doesn't have any cards.");
             }
-            e.Reply((int)HttpCodes.OK, System.Text.Json.JsonSerializer.Serialize(deck.CardList, JsonOptions.DefaultOptions));
+            if (e.Path.StartsWith("/deck?format=plain"))
+            {
+                int totalCards = deck!.CardList!.Count;
+                int monsterCount = deck.CardList.Count(card => card.Type == CardType.Monster);
+                int spellCount = deck.CardList.Count(card => card.Type == CardType.Spell);
+                float maxDamage = deck.CardList.Max(card => card.Damage);
+                float minDamage = deck.CardList.Min(card => card.Damage);
+                int countFire = deck.CardList.Count(card => card.Element == ElementType.Fire);
+                int countRegular = deck.CardList.Count(card => card.Element == ElementType.Normal);
+                int countWater = deck.CardList.Count(card => card.Element == ElementType.Water);
+
+                string plainDescription = $"The deck consists of {totalCards} cards.\n" +
+                          $"It features {monsterCount} monsters and {spellCount} spells.\n" +
+                          $"Your strongest card does {maxDamage} damage and your weakest {minDamage} damage.\n" +
+                          $"Elements are the following: {countFire} fire, {countRegular} regular, {countWater} water.";
+
+                e.Reply((int)HttpCodes.OK, "{\"description\":\"" + plainDescription + "\"}");
+            }
+            else
+            {
+                e.Reply((int)HttpCodes.OK, System.Text.Json.JsonSerializer.Serialize(deck.CardList, JsonOptions.DefaultOptions));
+            }
         }
 
         private void GetCardsByUser(HttpSvrEventArgs e)
@@ -107,26 +128,14 @@ namespace MTCG.Controller
 
         private void CreateNewCardPackage(HttpSvrEventArgs e)
         {
-            try
-            {
-                Console.WriteLine("in create newcardpackage controller");
-                _packageService.CreateNewPackage(e);
 
-                e.Reply((int)HttpCodes.OK, "{\"description\":\"Package and cards successfully created.\"}");
+            Console.WriteLine("in create newcardpackage controller");
+            _packageService.CreateNewPackage(e);
 
-            }
-            //catch (UserNotAdminException ex)
-            //{
-            //    Console.WriteLine(ex.Message);
-            //    e.Reply((int)HttpCodes.FORBIDDEN, "{\"description\":\"Provided user is not admin.\"}");
+            e.Reply((int)HttpCodes.OK, "{\"description\":\"Package and cards successfully created.\"}");
 
-            //}
 
-          
-            catch (Exception)
-            {
-                e.Reply((int)HttpCodes.INTERNAL_SERVER_ERROR, "{\"msg\":\"User could not be created. Something went wrong\"}");
-            }
+
         }
         private void BuyCardPackage(HttpSvrEventArgs e)
         {

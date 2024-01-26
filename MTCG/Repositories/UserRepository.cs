@@ -31,48 +31,34 @@ namespace MTCG.Repositories
         {
             using (var connection = _connectionFactory.CreateConnection())
             {
-                try
+
+                using (var cmd = connection.CreateCommand())
                 {
-                    using (var cmd = connection.CreateCommand())
+                    UserStats userStats = new();
+                    cmd.CommandText = "SELECT * FROM USERSTATS WHERE ID= :n";
+                    IDataParameter n = cmd.CreateParameter();
+                    n.ParameterName = ":n";
+                    n.Value = userId;
+                    cmd.Parameters.Add(n);
+
+                    using (var reader = cmd.ExecuteReader())
                     {
-                        cmd.CommandText = "SELECT * FROM USERSTATS WHERE ID= :n";
-                        IDataParameter n = cmd.CreateParameter();
-                        n.ParameterName = ":n";
-                        n.Value = userId;
-                        cmd.Parameters.Add(n);
-
-                        using (var reader = cmd.ExecuteReader())
+                        if (reader.Read())
                         {
-                            if (reader.Read())
-                            {
-                                _ = reader.GetGuid(0);
-                                string name = reader.GetString(1);
-                                int elo = reader.GetInt32(2);
-                                int wins = reader.GetInt32(3);
-                                int losses = reader.GetInt32(4);
-                                int games = reader.GetInt32(5);
+                            _ = reader.GetGuid(0);
+                            userStats.Name = reader.GetString(1);
+                            userStats.Elo = reader.GetInt32(2);
+                            userStats.Wins = reader.GetInt32(3);
+                            userStats.Losses = reader.GetInt32(4);
+                            userStats.Games = reader.GetInt32(5);
 
 
-                                return new UserStats
-                                {
-                                    Name = name,
-                                    Elo = elo,
-                                    Wins = wins,
-                                    Losses = losses,
-                                    Games = games
-                                };
-                            }
+
                         }
                     }
-                    return null;
+                    return userStats;
                 }
-                catch (Exception ex)
-                {
-                    Console.WriteLine(ex.Message);
-                    Console.WriteLine("exception in userrepository getuserstats");
 
-                }
-                return null;
 
             }
         }
@@ -496,7 +482,7 @@ namespace MTCG.Repositories
                         {
                             Console.WriteLine($"User with the name {userCredentials.Username} already exists!");
                             throw new ConflictException("User with same username already registered.");
-                        
+
                         }
                         Guid id = Guid.NewGuid();
                         cmd.CommandText = $"INSERT INTO USERS (ID, NAME, PASSWORD) VALUES (:id, :n, :p)";

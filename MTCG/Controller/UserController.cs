@@ -42,7 +42,7 @@ namespace MTCG.Controller
                     }
                     break;
                 default:
-                    e.Reply((int)HttpCodes.BAD_REQUEST, "{\"Description\":\"Not a valid Http Request!\"}");
+                    e.Reply((int)HttpCodes.BAD_REQUEST, "{\"description\":\"Not a valid Http Request!\"}");
                     break;
             }
         }
@@ -80,7 +80,7 @@ namespace MTCG.Controller
                 throw new UserNotFoundException("User not found");
             }
 
-            e.Reply((int)HttpCodes.OK, System.Text.Json.JsonSerializer.Serialize(userData));
+            e.Reply((int)HttpCodes.OK, System.Text.Json.JsonSerializer.Serialize(userData),JsonOptions.NullOptions);
         }
 
 
