@@ -12,5 +12,6 @@ namespace MTCG.Models
         public  ResultType? Result { get; set;  }
         public string? LogRoundPlayerOne { get; set; }
         public string? LogRoundPlayerTwo { get; set; }
-    }
+
+    } 
 }

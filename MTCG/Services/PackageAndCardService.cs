@@ -31,80 +31,28 @@ namespace MTCG.Services
 
         public List<Card>? BuyPackage(HttpSvrEventArgs e)
         {
-            try
-            {
-                Guid userId = _sessionService.AuthenticateUserAndSession(e, null);
 
-                return _packageAndCardRepository.BuyPackage((Guid)userId);
-            }
-            catch (InsufficientCoinsException)
-            {
-                throw;
-            }
-            catch (NoAvailableCardsException)
-            {
-                throw;
-            }
-            catch (UnauthorizedException)
-            {
-                throw;
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex.Message);
-                throw;
-            }
+            Guid userId = _sessionService.AuthenticateUserAndSession(e, null);
+
+            return _packageAndCardRepository.BuyPackage((Guid)userId);
+
+
+
         }
 
         public Deck GetDeckByUser(HttpSvrEventArgs e)
         {
-            try
-            {
+            Guid userId = _sessionService.AuthenticateUserAndSession(e, null);
 
-                Guid userId = _sessionService.AuthenticateUserAndSession(e, null);
-                Deck deck = _packageAndCardRepository.GetDeckByUser((Guid)userId);
-                return deck;
-            }
-
-            catch (UserHasNoCardsException)
-            {
-                throw;
-            }
-            catch (InvalidCardCountInDeck ex)
-            {
-                Console.WriteLine(ex.Message);
-                throw;
-            }
-            catch (UnauthorizedException)
-            {
-                throw;
-            }
-            catch (Exception)
-            {
-                throw;
-            }
+            return _packageAndCardRepository.GetDeckByUser(userId);
         }
 
 
 
         public List<Card>? GetCardsByUser(HttpSvrEventArgs e)
         {
-            try
-            {
-                Guid userId = _sessionService.AuthenticateUserAndSession(e, null);
-
-                List<Card>? cardList = _packageAndCardRepository.GetCardsByUser((Guid)userId);
-
-                return cardList;
-            }
-            catch (UnauthorizedException)
-            {
-                throw;
-            }
-            catch (Exception)
-            {
-                throw;
-            }
+            Guid userId = _sessionService.AuthenticateUserAndSession(e, null);
+            return _packageAndCardRepository.GetCardsByUser((Guid)userId);
         }
 
         public bool ConfigureDeckForUser(HttpSvrEventArgs e)
@@ -152,8 +100,8 @@ namespace MTCG.Services
         public bool CheckForValidDeck(Guid userId)
         {
             Deck? deck = _packageAndCardRepository.GetDeckByUser(userId);
-            Console.WriteLine("got deck: "+deck.CardList);
-            Console.WriteLine("coount: "+deck?.CardList?.Count);
+            Console.WriteLine("got deck: " + deck.CardList);
+            Console.WriteLine("coount: " + deck?.CardList?.Count);
 
             if (deck?.CardList?.Count == 4)
             {
@@ -163,68 +111,57 @@ namespace MTCG.Services
 
         }
 
-       
 
-        public string CreateNewPackage(HttpSvrEventArgs e)
+
+        public bool CreateNewPackage(HttpSvrEventArgs e)
         {
-            try
+
+            string? token = e.Headers?.FirstOrDefault(header => header.Name == "Authorization")?.Value;
+            string userName = string.Empty;
+            if ("-mtcgToken" == token?.Substring(token.Length - 10))
             {
-                string? token = e.Headers?.FirstOrDefault(header => header.Name == "Authorization")?.Value;
-                string userName = string.Empty;
-                if ("-mtcgToken" == token?.Substring(token.Length - 10))
-                {
-                    token = token.Replace("-mtcgToken", "");
-                    userName = token.Replace("Bearer ", "");
-                    Console.WriteLine("username in createpackage: " + userName);
-                }
-
-                if (userName != "admin")
-                {
-                    throw new UserNotAdminException("user not admin in crate new packge");
-                }
-                Guid userId = _sessionService.AuthenticateUserAndSession(e, null);
-
-                Package cardPackage = new Package { PackageId = Guid.NewGuid() };
-                cardPackage.CardList = JsonConvert.DeserializeObject<List<Card>>(e.Payload);
-                if (cardPackage.CardList == null)
-                {
-                    throw new Exception(" no card in package in service");
-                }
-           
-
-                foreach (Card card in cardPackage.CardList)               
-                {
-                    card.Element = EnumHelper.GetEnumByNameFront<ElementType>(card.Name.ToString());
-                    card.Monster = EnumHelper.GetEnumByNameEnd<MonsterType>(card.Name.ToString());
-                    card.Type = EnumHelper.GetEnumByNameEnd<CardType>(card.Name.ToString());
-                    card.Locked = false;
-                }
-
-
-
-                for (int i = 0; i < cardPackage.CardList?.Count; i++)
-                {
-
-                    Card card = cardPackage.CardList[i];
-                    Console.WriteLine("card:" + card.Name);
-                    Console.WriteLine("id: " + card.Id + "");
-                }
-                if (_packageAndCardRepository.AddPackage(cardPackage))
-                    return "success";
-                else
-                    return "409";
-
-
-
-            }
-            catch (Exception)
-            {
-                throw;
+                token = token.Replace("-mtcgToken", "");
+                userName = token.Replace("Bearer ", "");
+                Console.WriteLine("username in createpackage: " + userName);
             }
 
+            if (userName != "admin")
+            {
+                throw new ForbiddenException("Provided user is not \"admin\".");
+            }
+            Guid userId = _sessionService.AuthenticateUserAndSession(e, "admin");
 
+            Package cardPackage = new Package { PackageId = Guid.NewGuid() };
+            cardPackage.CardList = JsonConvert.DeserializeObject<List<Card>>(e.Payload);
 
+            if (cardPackage.CardList == null || cardPackage.CardList.Count !=5)
+            {
+                throw new BadRequestException("No cards in Package or invalid card count.");
+            }
+            List<Card> existingCards = _packageAndCardRepository.GetAllCards();
 
+            if(cardPackage.CardList.Select(card =>card.Id).Intersect(existingCards.Select(card => card.Id)).Any())
+            {
+                throw new Exception("At least one card in the packages already exists");
+            }           
+                   
+
+            foreach (Card card in cardPackage.CardList)
+            {
+                card.Element = EnumHelper.GetEnumByNameFront<ElementType>(card.Name.ToString());
+                card.Monster = EnumHelper.GetEnumByNameEnd<MonsterType>(card.Name.ToString());
+                card.Type = EnumHelper.GetEnumByNameEnd<CardType>(card.Name.ToString());
+                card.Locked = false;
+            }
+
+            for (int i = 0; i < cardPackage.CardList.Count; i++)
+            {
+
+                Card card = cardPackage.CardList[i];
+                Console.WriteLine("card:" + card.Name);
+                Console.WriteLine("id: " + card.Id + "");
+            }
+            return _packageAndCardRepository.AddPackage(cardPackage);
         }
 
     }

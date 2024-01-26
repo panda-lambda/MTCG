@@ -25,7 +25,7 @@ namespace MTCG.Controller
 
         public override void HandleRequest(HttpSvrEventArgs e)
         {
-            AuthenticateAndCreateSession(e);
+            ExecuteWithExceptionHandling(e, AuthenticateAndCreateSession);
         }
 
         public void AuthenticateAndCreateSession(HttpSvrEventArgs e)
@@ -54,6 +54,7 @@ namespace MTCG.Controller
                     {
                         e.Reply((int)HttpCodes.UNAUTORIZED, "{\"description\":\"Access token is missing or invalid\"}");
                     }
+
 
                 
                     

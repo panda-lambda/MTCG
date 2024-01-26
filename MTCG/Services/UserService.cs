@@ -48,22 +48,15 @@ namespace MTCG.Services
         {
             string hashedPassword = HashPassword(password);
             Console.WriteLine(hashedPassword);
-            try
-            {
-                UserCredentials userCredentials = new() { Username = username, Password = hashedPassword };
 
-                if (_userRepository != null && _userRepository.registerUser(userCredentials))
-                    return true;
-                else
-                    return false;
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine("e:");
-                Console.WriteLine(e);
-                Console.WriteLine("Something went wrong in the service");
+            UserCredentials userCredentials = new() { Username = username, Password = hashedPassword };
+
+            if (_userRepository != null && _userRepository.registerUser(userCredentials))
+                return true;
+            else
                 return false;
-            }
+
+
         }
 
         public bool UpdateUserData(HttpSvrEventArgs e)
@@ -72,52 +65,39 @@ namespace MTCG.Services
             Guid? userId = _sessionService?.AuthenticateUserAndSession(e, usernameClaim);
             if (usernameClaim == null || userId == null && usernameClaim != "admin")
             {
-                throw new UnauthorizedAccessException();
+                throw new UnauthorizedException();
             }
             if (usernameClaim == "admin")
             {
-                 userId = _sessionService?.AuthenticateUserAndSession(e, null);
+                userId = _sessionService?.AuthenticateUserAndSession(e, null);
             }
             if (userId == Guid.Empty || userId == null)
             {
-                throw new UnauthorizedAccessException();
+                throw new UnauthorizedException();
             }
 
 
             UserData? userData = JsonConvert.DeserializeObject<UserData>(e.Payload);
             if (userData == null)
             {
-                throw new NoNullAllowedException();
+                throw new UnauthorizedException();
             }
-            if (_userRepository != null && _userRepository.UpdateUserData((Guid)userId, userData))
-                return true;
-            else
-                return false;
+            return _userRepository != null && _userRepository.UpdateUserData((Guid)userId, userData);
+
 
         }
 
 
         public UserData? GetUserData(HttpSvrEventArgs e)
         {
-            Guid? userId = _sessionService?.AuthenticateUserAndSession(e, null);
+            string? usernameClaim = e.Path.Replace("/users/", "");
+            if (usernameClaim == null)
+            {
+                throw new BadRequestException("No username provided.");
+            }
+            Guid userId = _sessionService.AuthenticateUserAndSession(e, usernameClaim);
 
-            if (userId == Guid.Empty || userId == null)
-            {
-                throw new UnauthorizedAccessException();
-            }
-            string usernameClaim = e.Path.Replace("/users/", "");
-            string? userNameInSession = _sessionService?.GetUsernameFromSession((Guid)userId);
-            if (userNameInSession.IsNullOrEmpty() || usernameClaim != userNameInSession)
-            {
-                throw new UnauthorizedAccessException();
-            }
             return _userRepository?.GetUserData((Guid)userId);
-
-
-
-
-
-
         }
 
 

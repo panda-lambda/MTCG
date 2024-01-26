@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.FileProviders;
+using Microsoft.Extensions.Logging;
 using MTCG.HttpServer;
 using MTCG.Models;
 using MTCG.Services;
@@ -36,35 +37,38 @@ namespace MTCG.Controller
             {
                 if (e.Path.StartsWith("/packages"))
                 {
-                    CreateNewCardPackage(e);
+                    ExecuteWithExceptionHandling(e, CreateNewCardPackage);
                 }
                 if (e.Path.StartsWith("/transactions/packages"))
                 {
-                    BuyCardPackage(e);
+                    ExecuteWithExceptionHandling(e, BuyCardPackage);
                 }
             }
 
-            if (e.Method == "GET")
+            else if (e.Method == "GET")
             {
                 if (e.Path.StartsWith("/cards"))
                 {
-                    GetCardsByUser(e);
+                    ExecuteWithExceptionHandling(e, GetCardsByUser);
                 }
 
                 if (e.Path.StartsWith("/deck"))
                 {
-                    GetDeckByUser(e);
+                    ExecuteWithExceptionHandling(e, GetDeckByUser);
                 }
 
             }
 
-            if (e.Method == "PUT")
+            else if (e.Method == "PUT")
             {
                 if (e.Path.StartsWith("/deck"))
                 {
                     ExecuteWithExceptionHandling(e, ConfigureDeck);
                 }
             }
+
+            else { e.Reply((int)HttpCodes.BAD_REQUEST, "{\"description\":\"Not a valid Http Request!\"}"); }
+
         }
 
         private void ConfigureDeck(HttpSvrEventArgs e)
@@ -81,62 +85,24 @@ namespace MTCG.Controller
 
         private void GetDeckByUser(HttpSvrEventArgs e)
         {
-            try
+            Deck? deck = _packageService.GetDeckByUser(e);
+            if (deck == null || deck.CardList?.Count == 0)
             {
-                Deck? deck = _packageService.GetDeckByUser(e);
-                if (deck == null)
-                {
-                    throw new UserHasNoCardsException("deck in controller null");
-                }
-                e.Reply((int)HttpCodes.OK, System.Text.Json.JsonSerializer.Serialize(deck.CardList, JsonOptions.DefaultOptions));
+                throw new NoContentException("The request was fine, but the deck doesn't have any cards.");
             }
-            catch (UserHasNoCardsException)
-            {
-                e.Reply((int)HttpCodes.NO_CONTENT, "{\"description\":\"The request was fine, but the deck doesn't have any cards.\"}");
-            }
-
-            catch (UnauthorizedException ex)
-            {
-                Console.WriteLine(ex.Message + "   in getdeckbyuser controller");
-                e.Reply((int)HttpCodes.UNAUTORIZED, "{\"description\":\"Access token is missing or invalid.\"}");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex.Message + " in controller");
-                e.Reply((int)HttpCodes.INTERNAL_SERVER_ERROR, "{\"msg\":\"Something went wrong.\"}");
-
-            }
-
+            e.Reply((int)HttpCodes.OK, System.Text.Json.JsonSerializer.Serialize(deck.CardList, JsonOptions.DefaultOptions));
         }
 
         private void GetCardsByUser(HttpSvrEventArgs e)
         {
-            try
-            {
-                List<Card>? userCardList = _packageService.GetCardsByUser(e);
-                if (userCardList == null || userCardList.Count == 0)
-                {
-                    throw new UserHasNoCardsException("user hat keine karten, im controller");
-                }
-                e.Reply((int)HttpCodes.OK, System.Text.Json.JsonSerializer.Serialize(userCardList, JsonOptions.DefaultOptions));
 
-            }
-            catch (UserHasNoCardsException)
+            List<Card>? userCardList = _packageService.GetCardsByUser(e);
+            if (userCardList == null || userCardList.Count == 0)
             {
-                e.Reply((int)HttpCodes.NO_CONTENT, "{\"description\":\"The request was fine, but the user doesn't have any cards.\"}");
+                throw new NoContentException("The request was fine, but the user doesn't have any cards.");
             }
+            e.Reply((int)HttpCodes.OK, System.Text.Json.JsonSerializer.Serialize(userCardList, JsonOptions.DefaultOptions));
 
-            catch (UnauthorizedException ex)
-            {
-                Console.WriteLine(ex.Message + "   in buycardpackage controller");
-                e.Reply((int)HttpCodes.UNAUTORIZED, "{\"description\":\"Access token is missing or invalid.\"}");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex.Message + " in controller");
-                e.Reply((int)HttpCodes.INTERNAL_SERVER_ERROR, "{\"msg\":\"Something went wrong.\"}");
-
-            }
         }
 
         private void CreateNewCardPackage(HttpSvrEventArgs e)
@@ -149,23 +115,14 @@ namespace MTCG.Controller
                 e.Reply((int)HttpCodes.OK, "{\"description\":\"Package and cards successfully created.\"}");
 
             }
-            catch (UserNotAdminException ex)
-            {
-                Console.WriteLine(ex.Message);
-                e.Reply((int)HttpCodes.FORBIDDEN, "{\"description\":\"Provided user is not admin.\"}");
+            //catch (UserNotAdminException ex)
+            //{
+            //    Console.WriteLine(ex.Message);
+            //    e.Reply((int)HttpCodes.FORBIDDEN, "{\"description\":\"Provided user is not admin.\"}");
 
-            }
-            catch (UnauthorizedException ex)
-            {
-                Console.WriteLine(ex.Message);
-                e.Reply((int)HttpCodes.UNAUTORIZED, "{\"description\":\"Access token is missing or invalid.\"}");
+            //}
 
-            }
-            catch (CardExistsAlreadyException ex)
-            {
-                Console.WriteLine(ex.Message);
-                e.Reply((int)HttpCodes.CONFLICT, "{\"description\":\"At least one card in the packages already exists\"}");
-            }
+          
             catch (Exception)
             {
                 e.Reply((int)HttpCodes.INTERNAL_SERVER_ERROR, "{\"msg\":\"User could not be created. Something went wrong\"}");
@@ -173,41 +130,14 @@ namespace MTCG.Controller
         }
         private void BuyCardPackage(HttpSvrEventArgs e)
         {
-            try
+            List<Card>? package = _packageService.BuyPackage(e);
+            if (package == null)
             {
-                List<Card>? package = _packageService.BuyPackage(e);
-                if (package == null)
-                {
-                    throw new InternalServerErrorException("package in controller null");
-                }
-                string testo = System.Text.Json.JsonSerializer.Serialize(package, JsonOptions.DefaultOptions);
-                Console.WriteLine("package and cards: " + testo);
-                e.Reply((int)HttpCodes.OK, System.Text.Json.JsonSerializer.Serialize(package, JsonOptions.DefaultOptions));
+                throw new NotFoundException("No card package available for buying.");
             }
-            catch (UnauthorizedException ex)
-            {
-                Console.WriteLine(ex.Message + "   in buycardpackage controller");
-                e.Reply((int)HttpCodes.UNAUTORIZED, "{\"description\":\"Access token is missing or invalid.\"}");
-            }
-            catch (InternalServerErrorException ex)
-            {
-                Console.WriteLine(ex.Message);
-                e.Reply((int)HttpCodes.INTERNAL_SERVER_ERROR, "{\"msg\":\"Something went wrong.\"}");
-            }
-            catch (NoAvailableCardsException)
-            {
-                e.Reply((int)HttpCodes.NOT_FOUND, "{\"description\":\" No card package available for buying.\"}");
-            }
-            catch (InsufficientCoinsException)
-            {
-                e.Reply((int)HttpCodes.FORBIDDEN, "{\"description\":\"Not enough money for buying a card package.\"}");
-
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex.Message);
-                e.Reply((int)HttpCodes.INTERNAL_SERVER_ERROR, "{\"msg\":\"Something went wrong.\"}");
-            }
+            string testo = System.Text.Json.JsonSerializer.Serialize(package, JsonOptions.DefaultOptions);
+            Console.WriteLine("package and cards: " + testo);
+            e.Reply((int)HttpCodes.OK, System.Text.Json.JsonSerializer.Serialize(package, JsonOptions.DefaultOptions));
         }
 
 

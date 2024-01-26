@@ -114,7 +114,7 @@ namespace MTCG.Repositories
                         i.ParameterName = ":id";
                         i.Value = id;
                         cmd.Parameters.Add(i);
-                   
+
 
                         cmd.ExecuteNonQuery();
                         transaction.Commit();
@@ -290,7 +290,7 @@ namespace MTCG.Repositories
 
         public bool SetCoinsByUserId(Guid userId, int amount)
         {
-            Console.WriteLine("in set goins with "+ amount);
+            Console.WriteLine("in set goins with " + amount);
             using (var connection = _connectionFactory.CreateConnection())
             {
                 try
@@ -312,7 +312,7 @@ namespace MTCG.Repositories
 
 
                         int rowsAffected = cmd.ExecuteNonQuery();
-                        return rowsAffected > 0; 
+                        return rowsAffected > 0;
                     }
                 }
                 catch (Exception ex)
@@ -333,12 +333,12 @@ namespace MTCG.Repositories
                     using (var cmd = connection.CreateCommand())
                     {
 
-                        cmd.CommandText = 
-             $"INSERT INTO USERDATA(Id, Name, Bio, Image)"+
-            " VALUES(:id, :name, :bio, :img)"+
-             "ON CONFLICT(Id) DO UPDATE "+
-          " SET Name = CASE WHEN EXCLUDED.Name IS NOT NULL THEN EXCLUDED.Name ELSE USERDATA.Name END, "+
-        " Bio = CASE WHEN EXCLUDED.Bio IS NOT NULL THEN EXCLUDED.Bio ELSE USERDATA.Bio END, "+
+                        cmd.CommandText =
+             $"INSERT INTO USERDATA(Id, Name, Bio, Image)" +
+            " VALUES(:id, :name, :bio, :img)" +
+             "ON CONFLICT(Id) DO UPDATE " +
+          " SET Name = CASE WHEN EXCLUDED.Name IS NOT NULL THEN EXCLUDED.Name ELSE USERDATA.Name END, " +
+        " Bio = CASE WHEN EXCLUDED.Bio IS NOT NULL THEN EXCLUDED.Bio ELSE USERDATA.Bio END, " +
         " Image = CASE WHEN EXCLUDED.Image IS NOT NULL THEN EXCLUDED.Image ELSE USERDATA.Image END";
 
                         IDbDataParameter idP = cmd.CreateParameter();
@@ -478,16 +478,11 @@ namespace MTCG.Repositories
         {
             using (var connection = _connectionFactory.CreateConnection())
             {
-
-
                 using (var transaction = connection.BeginTransaction())
                 using (var cmd = connection.CreateCommand())
                 {
-
                     try
                     {
-
-
                         cmd.CommandText = $"SELECT COUNT(*) FROM USERS WHERE NAME = :n";
                         IDataParameter p = cmd.CreateParameter();
                         p.ParameterName = ":n";
@@ -500,10 +495,10 @@ namespace MTCG.Repositories
                         if (userCount > 0)
                         {
                             Console.WriteLine($"User with the name {userCredentials.Username} already exists!");
-                            return false;
+                            throw new ConflictException("User with same username already registered.");
+                        
                         }
                         Guid id = Guid.NewGuid();
-                        //users
                         cmd.CommandText = $"INSERT INTO USERS (ID, NAME, PASSWORD) VALUES (:id, :n, :p)";
                         p = cmd.CreateParameter();
                         p.ParameterName = ":id";
@@ -538,8 +533,8 @@ namespace MTCG.Repositories
                         k.Value = 20;
                         cmd.Parameters.Add(k);
 
-                        
-                        
+
+
                         cmd.ExecuteNonQuery();
 
                         cmd.Parameters.Clear();

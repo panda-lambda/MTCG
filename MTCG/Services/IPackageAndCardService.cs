@@ -10,13 +10,13 @@ namespace MTCG.Services
 {
     public interface IPackageAndCardService
     {
-        public string CreateNewPackage(HttpSvrEventArgs e);
-        public List<Card>? BuyPackage(HttpSvrEventArgs e);
-        public List<Card>? GetCardsByUser(HttpSvrEventArgs e);
-        public Deck GetDeckByUser(HttpSvrEventArgs e);
-        public bool ConfigureDeckForUser(HttpSvrEventArgs e);
+         bool CreateNewPackage(HttpSvrEventArgs e);
+        List<Card>? BuyPackage(HttpSvrEventArgs e);
+        List<Card>? GetCardsByUser(HttpSvrEventArgs e);
+        Deck GetDeckByUser(HttpSvrEventArgs e);
+        bool ConfigureDeckForUser(HttpSvrEventArgs e);
 
-        public bool CheckForValidDeck( Guid userId);
+        bool CheckForValidDeck( Guid userId);
 
 
        

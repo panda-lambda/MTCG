@@ -55,15 +55,19 @@ namespace MTCG.Controller
                     }
                     break;
                 default:
-                    e.Reply((int)HttpCodes.BAD_REQUEST, "{\"msg\":\"Not a valid Http Request!\"}");
+                    e.Reply((int)HttpCodes.BAD_REQUEST, "{\"description\":\"Not a valid Http Request!\"}");
                     break;
             }
         }
 
         internal void TradeSingleCard(HttpSvrEventArgs e)
         {
-            if(_tradingService.TradeSingleCard(e))
-            e.Reply((int)HttpCodes.OK, "Trading deal successfully executed.");
+            if (_tradingService.TradeSingleCard(e))
+                e.Reply((int)HttpCodes.OK, "Trading deal successfully executed.");
+            else
+            {
+                throw new Exception("Internal Error: Something went wrong while swapping cards");
+            }
 
         }
         internal void CreateNewTrading(HttpSvrEventArgs e)
@@ -92,7 +96,7 @@ namespace MTCG.Controller
             }
             else
             {
-                throw new NoContentException();
+                throw new NoContentException("The request was fine, but there are no trading deals available.");
             }
         }
 

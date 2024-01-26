@@ -32,6 +32,9 @@ namespace MTCG.Services
             {
                 throw new UnauthorizedException();
             }
+
+            Console.WriteLine($"in create new trading deal payload: {e.Payload}");
+            
             TradingDeal? tradingDeal = JsonConvert.DeserializeObject<TradingDeal>(e.Payload) ?? throw new Exception(" no trading deal in service");
             tradingDeal.OwnerId = userId;
             if (_packageAndCardRepository.GetTradingDealsByTradingId(tradingDeal.Id) != null)
@@ -56,7 +59,10 @@ namespace MTCG.Services
                 throw new NotFoundException("The provided deal ID was not found.");
             }
 
-            if (!Guid.TryParse(e.Payload, out Guid cardToMeetReqId))
+            string cardBuyingIdString = e.Payload.Replace("\"","");
+            Console.WriteLine("nach replace :" +cardBuyingIdString);
+
+            if (!Guid.TryParse(cardBuyingIdString, out Guid cardToMeetReqId))
             {
                 throw new ForbiddenException("The offered card is not owned by the user, or the requirements are not met (Type, MinimumDamage), or the offered card is locked in the deck.");
             }

@@ -87,8 +87,12 @@ namespace MTCG.Utilities
 
     public class NoContentException : Exception
     {
-        public NoContentException() : base() { }
+        public NoContentException(string message) : base(message) { }
     }
 
+    public class BadRequestException : Exception
+    {
+        public BadRequestException(string message) : base(message) { }
+    }
 
 }

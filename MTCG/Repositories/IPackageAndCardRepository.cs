@@ -1,10 +1,4 @@
 ﻿using MTCG.Models;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Numerics;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace MTCG.Repositories
 {
@@ -23,7 +17,7 @@ namespace MTCG.Repositories
         bool CreateNewTradingDeal(TradingDeal tradingDeal);
 
         bool CheckCardForTradingDeal(Guid cardId, Guid userId);
-        Guid?  GetTradingDealsByTradingId(Guid tradingId);
+        Guid? GetTradingDealsByTradingId(Guid tradingId);
         List<TradingDeal> GetAllTradingDeals();
         bool DeleteTradingDeal(Guid tradeId, Guid userId);
 
@@ -32,6 +26,8 @@ namespace MTCG.Repositories
         Card? GetSingleCard(Guid cardId);
 
         Guid? GetCardToTradeFromTradingDeal(Guid tradeId);
+
+        List<Card> GetAllCards();
 
     }
 }

@@ -1,6 +1,7 @@
 ﻿using MTCG.HttpServer;
 using MTCG.Models;
 using MTCG.Utilities;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -46,8 +47,7 @@ namespace MTCG.Controller
             {
                 e.Reply((int)HttpCodes.CONFLICT, "{\"description\":\"User is currently fighting, please wait for the fight to finish.\"}");
             }
-
-          
+                  
 
             catch (ConflictException ex)
             {
@@ -68,11 +68,15 @@ namespace MTCG.Controller
             {
                 e.Reply((int)HttpCodes.NOT_FOUND, $"{{\"description\":\"{ex}\"}}");
             }
+            catch (BadRequestException ex)
+            {
+                e.Reply((int)HttpCodes.NOT_FOUND, $"{{\"description\":\"{ex}\"}}");
+             }
 
             catch (Exception ex)
             {
                 Console.WriteLine(ex);
-                e.Reply((int)HttpCodes.INTERNAL_SERVER_ERROR, "{\"msg\":\"Something went wrong.\"}");
+                e.Reply((int)HttpCodes.INTERNAL_SERVER_ERROR, "{\"description\":\"Something went wrong.\"}");
             }
 
 
