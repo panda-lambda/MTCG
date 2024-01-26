@@ -5,7 +5,7 @@ using Newtonsoft.Json.Linq;
 
 namespace UnitTests
 {
-    public class TestElo
+    public class EloTests
     {
 
         private int _kFactor = 20;
@@ -45,7 +45,7 @@ namespace UnitTests
             int eloOne, eloTwo;
             (eloOne, eloTwo) = CalculateEloTest(playerOne, playerTwo, ResultType.FirstPlayerWon);
             Assert.That(eloOne, Is.EqualTo(1210), "PlayerOne Wins not greater than start");
-            Assert.That(eloTwo, Is.EqualTo(1190), "PlayerOne Wins not greater than start");
+            Assert.That(eloTwo, Is.EqualTo(1190), "PlayerOne Wins not less than start");
         }
 
         [Test]
@@ -54,7 +54,7 @@ namespace UnitTests
             int eloOne, eloTwo;
             (eloOne, eloTwo) = CalculateEloTest(playerOne, playerTwo, ResultType.SecondPlayerWon);
             Assert.That(eloTwo, Is.EqualTo(1210), "PlayerTwo Wins not greater than start");
-            Assert.That(eloOne, Is.EqualTo(1190), "PlayerTwo Wins not greater than start");
+            Assert.That(eloOne, Is.EqualTo(1190), "PlayerTwo Wins not less than start");
         }
 
         [Test]
@@ -66,6 +66,35 @@ namespace UnitTests
             Assert.That(eloTwo, Is.EqualTo(1200), "PlayerOne draw not same as start");
         }
 
+        [Test]
+        public void EloPlayerNULLThrowNullExcep()
+        {
+            Assert.Throws<NullReferenceException>(() => CalculateEloTest(null, playerTwo, ResultType.FirstPlayerWon));
+            Assert.Throws<NullReferenceException>(() => CalculateEloTest(playerOne, null, ResultType.FirstPlayerWon));
+        }
+
+        [Test]
+        public void NotNegative()
+        {
+            int eloOne, eloTwo;
+            playerOne.Stats.Elo = 2500;
+            playerTwo.Stats.Elo = 1;
+            (eloOne, eloTwo) = CalculateEloTest(playerOne, playerTwo, ResultType.FirstPlayerWon);
+            Assert.That(eloOne, Is.InRange(0,3000)  , "PlayerOne not in range MaxVal");
+            Assert.That(eloTwo, Is.InRange(0, 3000), "PlayerTwo not in range MaxVal");
+        }
+
+        [Test]
+        public void HighCap()
+        {
+            int eloOne, eloTwo;
+
+            playerOne.Stats.Elo =2909; 
+            playerTwo.Stats.Elo =2700 ;
+            (eloOne, eloTwo) = CalculateEloTest(playerOne, playerTwo, ResultType.FirstPlayerWon);
+            Assert.That(eloOne, Is.EqualTo(2914), "PlayerOne not in range MaxVal");
+            Assert.That(eloTwo, Is.EqualTo(2695), "PlayerTwo not in range MaxVal");
+        }
 
     }
 }
