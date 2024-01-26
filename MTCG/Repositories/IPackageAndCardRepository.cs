@@ -29,5 +29,7 @@ namespace MTCG.Repositories
 
         List<Card> GetAllCards();
 
+        int SellCards(List<Guid>cardIds,Guid userId);
+
     }
 }

@@ -17,9 +17,11 @@ namespace MTCG.Services
         bool ConfigureDeckForUser(HttpSvrEventArgs e);
 
         bool CheckForValidDeck( Guid userId);
+        int SellCards(HttpSvrEventArgs e);
 
 
-       
+
+
 
 
     }

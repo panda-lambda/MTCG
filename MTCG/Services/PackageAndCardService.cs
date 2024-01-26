@@ -53,7 +53,44 @@ namespace MTCG.Services
         public int SellCards(HttpSvrEventArgs e)
         {
             Guid userId = _sessionService.AuthenticateUserAndSession(e, null);
-            return 0;
+            List<Guid>? cardIds = new();
+            try
+            {
+                cardIds = JsonConvert.DeserializeObject<List<Guid>>(e.Payload);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex);
+                throw new BadRequestException("Your request does not have the right format!");
+            }
+            if (cardIds == null || cardIds.Count == 0)
+            {
+                throw new BadRequestException("No cards were submitted.");
+            }
+            List<Card>? cardList = _packageAndCardRepository.GetCardsByUser(userId);
+            if (cardList == null)
+            {
+                return 0;
+            }
+            bool allIdsExist = cardIds.All(id => cardList.Any(card => card.Id == id && !card.Locked));
+
+            if (!allIdsExist)
+            {
+                return 0;
+            }
+            int? coins = _userRepository.GetCoinsByUserId(userId);
+            coins ??= 0;
+            int sold = _packageAndCardRepository.SellCards(cardIds, userId);
+            if (_userRepository.SetCoinsByUserId(userId, (sold + (int)coins)))
+                return sold;
+            else
+            {
+                throw new ConflictException("Something went wrong, please contact the support team.");
+            }
+
+
+
+
         }
 
         public List<Card>? GetCardsByUser(HttpSvrEventArgs e)

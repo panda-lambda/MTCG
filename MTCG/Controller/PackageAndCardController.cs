@@ -88,11 +88,11 @@ namespace MTCG.Controller
             }
         } private void SellCards(HttpSvrEventArgs e)
         {
-            int count = 0 ; 
-            count =  _packageService.SellCards(e));
+            int count = 0 ;
+            count = _packageService.SellCards(e);
             if (count != 0)
             {
-                e.Reply((int)HttpCodes.OK, "{\"description\":\" You sold "+count+ " and got "+Math.Floor(count/2.0)+".\"}");
+                e.Reply((int)HttpCodes.OK, "{\"description\":\" You sold "+count+ " cards for "+Math.Floor(count/2.0)+" coin(s).\"}");
             }
             else
             {

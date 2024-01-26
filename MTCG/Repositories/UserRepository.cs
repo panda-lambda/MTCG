@@ -269,7 +269,7 @@ namespace MTCG.Repositories
 
             using (var connection = _connectionFactory.CreateConnection())
             {
-
+                var rowsAffected = 0;
                 using (var transaction = connection.BeginTransaction())
                 {
                     try
@@ -302,8 +302,7 @@ namespace MTCG.Repositories
                             cmd.Parameters.Add(u);
 
 
-                            int rowsAffected = cmd.ExecuteNonQuery();
-                            return rowsAffected > 0;
+                            rowsAffected = cmd.ExecuteNonQuery();
                         }
                     }
                     catch (Exception ex)
@@ -313,6 +312,8 @@ namespace MTCG.Repositories
                         throw new Exception("Something went wrong while updating the coin count!");
 
                     }
+                    transaction.Commit();
+                    return rowsAffected > 0;
                 }
             }
         }
@@ -362,7 +363,7 @@ namespace MTCG.Repositories
                             Console.WriteLine("user updated");
                             Console.WriteLine(userData);
 
-                         
+
                         }
                     }
                     catch (Exception e)
@@ -453,7 +454,7 @@ namespace MTCG.Repositories
                                 }
 
                                 Console.WriteLine("bio " + bio);
-                                Console.WriteLine("image "+ img);
+                                Console.WriteLine("image " + img);
                                 Console.WriteLine("coins hat " + coins + " !");
                                 return new UserData
                                 {

@@ -623,9 +623,9 @@ namespace MTCG.Repositories
                         cmd.CommandText = inClause;
                         using (var reader = cmd.ExecuteReader())
                         {
-                            
+
                         }
-                        cmd.Parameters.Clear();               
+                        cmd.Parameters.Clear();
 
                         //--------
                         cmd.CommandText = $"UPDATE DECKS SET CardId1 = NULL, CardId2 = NULL, CardId3 = NULL, CardId4 = NULL WHERE OwnerId = :uid";
@@ -637,7 +637,7 @@ namespace MTCG.Repositories
 
                         cmd.Parameters.Clear();
                         //now delete cards from user
-                         inClause = "UPDATE CARDS SET OwnerId = :uid WHERE Id IN (";
+                        inClause = "UPDATE CARDS SET OwnerId = :uid WHERE Id IN (";
 
                         for (int i = 0; i < deck?.CardList?.Count; i++)
                         {
@@ -676,6 +676,91 @@ namespace MTCG.Repositories
             }
         }
 
+
+        public int SellCards(List<Guid> cardIds, Guid userId)
+        {
+            int affectedRows = 0;
+            using var connection = _connectionFactory.CreateConnection();
+            using (var transaction = connection.BeginTransaction())
+            {
+                try
+                {
+                    if (cardIds == null || cardIds.Count == 0)
+                    {
+                        return 0;
+                    }
+                    using (var cmd = connection.CreateCommand())
+                    {
+
+                        string selectCommand = $"SELECT *  FROM CARDS WHERE OWNERID = :uid AND LOCKED = FALSE AND ";
+
+
+
+                        IDataParameter uid = cmd.CreateParameter();
+                        uid.ParameterName = ":uid";
+                        uid.Value = userId;
+                        cmd.Parameters.Add(uid);
+
+                        string inClause = "ID IN (";
+
+                        for (int i = 0; i < cardIds.Count; i++)
+                        {
+                            string paramName = ":cardId" + i;
+                            inClause += paramName;
+
+                            if (i < cardIds.Count - 1)
+                            {
+                                inClause += ", ";
+                            }
+                            IDataParameter cardP = cmd.CreateParameter();
+                            cardP.ParameterName = paramName;
+                            cardP.Value = cardIds[i];
+                            cmd.Parameters.Add(cardP);
+                        }
+
+                        inClause += " )";
+                        selectCommand += inClause + " FOR UPDATE";
+                        cmd.CommandText = selectCommand;
+                        using (var reader = cmd.ExecuteReader())
+                        {
+                            int counter = 0;
+                            while (reader.Read())
+                            {
+
+                                counter++;
+                            }
+                            if (counter != cardIds.Count)
+                            {
+                                return 0;
+                            }
+                        }
+                      
+
+
+                        string updateCmd = $"UPDATE CARDS SET OWNERID = NULL WHERE OWNERID = :uid AND LOCKED = FALSE AND " + inClause;
+
+
+                        cmd.CommandText = updateCmd;
+                        affectedRows = cmd.ExecuteNonQuery();
+
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine("exception in selling cards repository");
+                    Console.WriteLine(ex);
+                    transaction.Rollback();
+                    throw new Exception("Something went wrong while selling cards!");
+                }
+                if (affectedRows != cardIds.Count)
+                {
+                    transaction.Rollback();
+                    return 0;
+                }
+                transaction.Commit();
+                return affectedRows;
+            }
+        }
         public List<Card>? GetCardsByUser(Guid userId)
         {
             Console.WriteLine(" in getcardsbyuser repo");
