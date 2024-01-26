@@ -13,8 +13,12 @@ namespace MTCG.Services
         private readonly PackageAndCardService? _packageService;
         private readonly UserRepository? _userRepository;
         private readonly int _refund;
-        public BattleLogicService(ISessionService sessionService, IPackageAndCardService packageService, IUserRepository userRepository, IConfiguration configuration)
+
+
+                public BattleLogicService(ISessionService sessionService, IPackageAndCardService packageService, IUserRepository userRepository, IConfiguration configuration)
         {
+           
+           
 
             _sessionService = (SessionService?)sessionService ?? throw new ArgumentNullException(nameof(sessionService));
             _packageService = (PackageAndCardService?)packageService ?? throw new ArgumentNullException(nameof(packageService));
@@ -22,6 +26,13 @@ namespace MTCG.Services
             string refundstring = configuration["AppSettings:refund"] ?? throw new InvalidOperationException("JWT Secret Key is not configured properly.");
             _refund = Int32.Parse(refundstring);
         }
+
+        /// <summary>
+        /// executes the battle and handles the return of the rule engine
+        /// </summary>
+        /// <param name="battle">battle with players and logs</param>
+        /// <returns>update battle object</returns>
+        /// <exception cref="Exception"></exception>
         public async Task<Battle> ExecuteBattle(Battle battle)
         {
                await Console.Out.WriteLineAsync($"{battle.PlayerOne.Name} fighting vs {battle.PlayerTwo.Name}");
@@ -113,6 +124,12 @@ namespace MTCG.Services
             return battle;
         }
 
+
+        /// <summary>
+        /// gets a card as string for the logs
+        /// </summary>
+        /// <param name="deck"></param>
+        /// <returns></returns>
         private string getCardsAsString(Deck? deck)
         {
             if (deck == null)
@@ -126,12 +143,25 @@ namespace MTCG.Services
             return result;
         }
 
+
+        /// <summary>
+        /// pick a card a single round
+        /// </summary>
+        /// <param name="deck"></param>
+        /// <returns>card object</returns>
         private static Card GetRandomCard(List<Card> deck)
         {
             Random rnd = new Random();
             int index = rnd.Next(0, deck.Count);
             return deck[index];
         }
+        /// <summary>
+        /// handles a single round with 2 cards
+        /// </summary>
+        /// <param name="cardOne"> random player one card</param>
+        /// <param name="cardTwo"> random plaer two card</param>
+        /// <returns></returns>
+        /// <exception cref="Exception"></exception>
 
         private static RoundResult? HandleSingleCardFight(Card cardOne, Card cardTwo)
         {

@@ -14,6 +14,11 @@ namespace MTCG.Repositories
             _connectionFactory = connectionFactory;
 
         }
+        /// <summary>
+        /// get the user statistics of a single user
+        /// </summary>
+        /// <param name="userId">user</param>
+        /// <returns>user statistics</returns>
 
         public UserStats GetUserStats(Guid userId)
         {
@@ -51,6 +56,12 @@ namespace MTCG.Repositories
             }
         }
 
+
+        /// <summary>
+        /// updates the user statistics of a single user
+        /// </summary>
+        /// <param name="id">user id</param>
+        /// <param name="stats">user statistics</param>
         public void UpdateUserStats(Guid id, UserStats stats)
         {
             Console.WriteLine("stats in updateuserStats");
@@ -102,6 +113,12 @@ namespace MTCG.Repositories
             }
         }
 
+
+        /// <summary>
+        /// gets the user name from the guid of a user
+        /// </summary>
+        /// <param name="userId">user id</param>
+        /// <returns>string with name</returns>
         public string GetNameByGuid(Guid? userId)
         {
             using (var connection = _connectionFactory.CreateConnection())
@@ -138,7 +155,10 @@ namespace MTCG.Repositories
             }
         }
 
-
+        /// <summary>
+        /// gets the scoreboard, ordered list of user stats
+        /// </summary>
+        /// <returns>list of user statistics</returns>
 
         public List<UserStats>? GetScoreboard()
         {
@@ -179,6 +199,13 @@ namespace MTCG.Repositories
 
             }
         }
+
+        /// <summary>
+        /// gets the hash value by username
+        /// </summary>
+        /// <param name="username"></param>
+        /// <returns>user credentials with hash</returns>
+        /// <exception cref="Exception"></exception>
 
         public UserCredentials? GetHashByUsername(string username)
         {
@@ -226,7 +253,11 @@ namespace MTCG.Repositories
             }
         }
 
-
+        /// <summary>
+        /// gets the current coin count of a user
+        /// </summary>
+        /// <param name="userId">owner id</param>
+        /// <returns>coin count</returns>
 
         public int? GetCoinsByUserId(Guid userId)
         {
@@ -263,6 +294,13 @@ namespace MTCG.Repositories
                 }
             }
         }
+        /// <summary>
+        /// changes the coin count
+        /// </summary>
+        /// <param name="userId">owner id</param>
+        /// <param name="amount">new coin count</param>
+        /// <returns>true if success</returns>
+        /// <exception cref="Exception"></exception>
 
         public bool SetCoinsByUserId(Guid userId, int amount)
         {
@@ -317,6 +355,14 @@ namespace MTCG.Repositories
                 }
             }
         }
+
+        /// <summary>
+        /// update user data with provided content
+        /// </summary>
+        /// <param name="userId"> user id</param>
+        /// <param name="userData">provided data</param>
+        /// <returns>true if success</returns>
+        /// <exception cref="Exception"></exception>
 
         public bool UpdateUserData(Guid userId, UserData userData)
         {
@@ -380,6 +426,12 @@ namespace MTCG.Repositories
             }
         }
 
+
+        /// <summary>
+        /// gets the guid from username
+        /// </summary>
+        /// <param name="userName"></param>
+        /// <returns>guid or null </returns>
         public Guid? GetGuidByUserName(string userName)
         {
             using (var connection = _connectionFactory.CreateConnection())
@@ -415,6 +467,14 @@ namespace MTCG.Repositories
 
 
         }
+
+
+        /// <summary>
+        /// gets the userdata of a single user
+        /// </summary>
+        /// <param name="userId">user id</param>
+        /// <returns>userdata or null</returns>
+        /// <exception cref="NotFoundException"> user was not found</exception>
         public UserData? GetUserData(Guid userId)
         {
             using (var connection = _connectionFactory.CreateConnection())
@@ -477,6 +537,13 @@ namespace MTCG.Repositories
                 }
             }
         }
+
+        /// <summary>
+        /// registers a new user and adds him/her to all relevant tables
+        /// </summary>
+        /// <param name="userCredentials"></param>
+        /// <returns>true if success</returns>
+        /// <exception cref="Exception"></exception>
 
         public bool registerUser(UserCredentials userCredentials)
         {

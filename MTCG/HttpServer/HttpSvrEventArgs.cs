@@ -22,10 +22,10 @@ namespace MTCG.HttpServer
         // constructors                                                                                                     //
         //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-        /// <summary>Creates a new instance of this class.</summary>
-        /// <param name="client">TCP client object.</param>
-        /// <param name="plainMessage">HTTP plain message.</param>
-        /// 
+       /// <summary>
+       /// Creates an instance of this class for a given client, to use as reply after the battle. 
+       /// </summary>
+       /// <param name="client">TCP client object</param>
         public HttpSvrEventArgs(TcpClient client)
         {
             _Client = client;
@@ -35,6 +35,11 @@ namespace MTCG.HttpServer
             Client = client;
 
         }
+
+        /// <summary>Creates a new instance of this class.</summary>
+        /// <param name="client">TCP client object.</param>
+        /// <param name="plainMessage">HTTP plain message.</param>
+        /// 
         public HttpSvrEventArgs(TcpClient client, string plainMessage)
         {
             _Client = client;

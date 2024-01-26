@@ -12,7 +12,20 @@ namespace MTCG.Controller
 {
     public abstract class BaseController
     {
+        /// <summary>
+        /// Catches exceptions and replies with the appropriate status code and message.
+        /// </summary>
+        /// <param name="e">HttpServer Event Args</param>
+        /// 
+
+        
         public abstract void HandleRequest(HttpSvrEventArgs e);
+
+        /// <summary>
+        /// uses a delegate to execute the action and catches exceptions.
+        /// </summary>
+        /// <param name="e"></param>
+        /// <param name="action"></param>
 
         protected static void ExecuteWithExceptionHandling(HttpSvrEventArgs e, Action<HttpSvrEventArgs> action)
         {

@@ -28,6 +28,13 @@ namespace MTCG.Services
             _gameService = (GameService?)gameservice ?? throw new ArgumentNullException(nameof(gameservice));
 
         }
+
+        /// <summary>
+        /// authenticates user, checks for valid deck and adds the player to the game
+        /// </summary>
+        /// <param name="e"></param>
+        /// <exception cref="UnauthorizedException"> no valid token</exception>
+        /// <exception cref="ForbiddenException"> no valid deck</exception>
         public void StartBattle(HttpSvrEventArgs e)
         {
             Guid? userId = _sessionService?.AuthenticateUserAndSession(e, null);
@@ -53,12 +60,24 @@ namespace MTCG.Services
 
         }
 
+        /// <summary>
+        /// checks if the deck is valid
+        /// </summary>
+        /// <param name="userId"></param>
+        /// <returns>true if valid</returns>
+
         private bool CheckForValidDeck(Guid userId)
         {
             return (_packageService != null && (bool)_packageService.CheckForValidDeck(userId));
         }
 
-
+        /// <summary>
+        /// gets the user stats for the battle object
+        /// </summary>
+        /// <param name="e"></param>
+        /// <returns>user stats</returns>
+        /// <exception cref="UnauthorizedException">invalid token</exception>
+        /// <exception cref="InternalServerErrorException"></exception>
         public UserStats GetUserStats(HttpSvrEventArgs e)
         {
             Guid? userId = _sessionService?.AuthenticateUserAndSession(e, null);
@@ -74,6 +93,14 @@ namespace MTCG.Services
             return (UserStats)userStats;
         }
 
+
+        /// <summary>
+        /// gets the scoreboard
+        /// </summary>
+        /// <param name="e"></param>
+        /// <returns>list of user stats</returns>
+        /// <exception cref="UnauthorizedException">invalid token</exception>
+        /// <exception cref="InternalServerErrorException"></exception>
         public List<UserStats> GetScoreboard(HttpSvrEventArgs e)
         {
             Guid? userId = _sessionService?.AuthenticateUserAndSession(e, null);

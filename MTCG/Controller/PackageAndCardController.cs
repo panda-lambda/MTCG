@@ -20,7 +20,9 @@ namespace MTCG.Controller
 {
     public class PackageAndCardController : BaseController
     {
-
+        /// <summary>
+        /// Controls everything related to cards and packages and handles related requests.
+        /// </summary>
         private IPackageAndCardService _packageService;
         private ISessionService _sessionService;
 
@@ -31,6 +33,10 @@ namespace MTCG.Controller
         }
 
 
+        /// <summary>
+        /// Handles the request and calls the appropriate method.
+        /// </summary>
+        /// <param name="e">HttpSvrEvenArgs</param>
         public override void HandleRequest(HttpSvrEventArgs e)
         {
             if (e.Method == "POST")
@@ -75,6 +81,13 @@ namespace MTCG.Controller
             else { e.Reply((int)HttpCodes.BAD_REQUEST, "{\"description\":\"Not a valid Http Request!\"}"); }
 
         }
+        
+
+        /// <summary>
+        /// Adds cards to the deck of the user. 
+        /// </summary>
+        /// <param name="e"></param>
+        /// <exception cref="InternalServerErrorException"> the deck can not be updated</exception>
 
         private void ConfigureDeck(HttpSvrEventArgs e)
         {
@@ -86,7 +99,14 @@ namespace MTCG.Controller
             {
                 throw new InternalServerErrorException("Something went wrong!");
             }
-        } private void SellCards(HttpSvrEventArgs e)
+        } 
+        
+        /// <summary>
+        /// unique feature: sells x cards for x/2 coins. 
+        /// </summary>
+        /// <param name="e">httpsvreventargs</param>
+        
+        private void SellCards(HttpSvrEventArgs e)
         {
             int count = 0 ;
             count = _packageService.SellCards(e);
@@ -100,6 +120,11 @@ namespace MTCG.Controller
             }
         }
 
+        /// <summary>
+        /// Gets the deck of a user
+        /// </summary>
+        /// <param name="e"></param>
+        /// <exception cref="NoContentException">there are no cards in the user's deck</exception>
         private void GetDeckByUser(HttpSvrEventArgs e)
         {
             Deck? deck = _packageService.GetDeckByUser(e);
@@ -131,6 +156,11 @@ namespace MTCG.Controller
             }
         }
 
+        /// <summary>
+        /// Get all the aquired cards of a user
+        /// </summary>
+        /// <param name="e"></param>
+        /// <exception cref="NoContentException"> user has no cards aquired yet</exception>
         private void GetCardsByUser(HttpSvrEventArgs e)
         {
 
@@ -143,6 +173,10 @@ namespace MTCG.Controller
 
         }
 
+        /// <summary>
+        /// Creates a new package that can be bought
+        /// </summary>
+        /// <param name="e"></param>
         private void CreateNewCardPackage(HttpSvrEventArgs e)
         {
 
@@ -154,6 +188,11 @@ namespace MTCG.Controller
 
 
         }
+        /// <summary>
+        /// Changes the ownership of the cards to the user and deletes the package. 
+        /// </summary>
+        /// <param name="e"></param>
+        /// <exception cref="NotFoundException">package can not be found</exception>
         private void BuyCardPackage(HttpSvrEventArgs e)
         {
             List<Card>? package = _packageService.BuyPackage(e);

@@ -44,7 +44,10 @@ namespace MTCG.Services
             _refund = Int32.Parse(refundstring);
         }
 
-
+        /// <summary>
+        /// adds a player to the quueue and sets his status to fighting in the user sessions 
+        /// </summary>
+        /// <param name="player">player object</param>
         public void AddPlayer(Player player)
         {
             playerQueue.Enqueue(player);
@@ -54,6 +57,10 @@ namespace MTCG.Services
 
             StartBattle();
         }
+
+        /// <summary>
+        /// checks if there are 2 players and dequeues them and starts the battle
+        /// </summary>
         private void StartBattle()
         {
             lock (queueLock)
@@ -81,6 +88,10 @@ namespace MTCG.Services
             }
         }
 
+        /// <summary>
+        /// after the battle is finished the battle is updated in the database and the players are notified
+        /// </summary>
+        /// <param name="battle">battle object</param>
 
         private async void ProcessBattle(Battle battle)
         {
@@ -95,6 +106,12 @@ namespace MTCG.Services
             await ReportLogToPlayer(completedBattle.PlayerTwo.Client, completedBattle.LogPlayerTwo);
 
         }
+
+        /// <summary>
+        /// handles the updating of the database
+        /// </summary>
+        /// <param name="battle"></param>
+        /// <returns></returns>
         private async Task UpdateDatabaseWithBattleResults(Battle battle)
         {
             await Task.Run(() =>
@@ -148,7 +165,13 @@ namespace MTCG.Services
 
         }
 
-
+        /// <summary>
+        /// calculates the new elo
+        /// </summary>
+        /// <param name="playerOne"></param>
+        /// <param name="playerTwo"></param>
+        /// <param name="result">resulttype</param>
+        /// <returns>new elo first player, new elo second player</returns>
         private (int, int) CalculateElo(Player playerOne, Player playerTwo, ResultType result)
         {
             double erwOne = 1 / (1 + Math.Pow(10, (playerTwo.Stats.Elo - playerOne.Stats.Elo) / 400.0));
@@ -167,6 +190,13 @@ namespace MTCG.Services
             return (newEloPlayerOne, newEloPlayerTwo);
         }
 
+
+        /// <summary>
+        /// sends the logs to the respective player
+        /// </summary>
+        /// <param name="client"> tcpclient saved from player object in battle</param>
+        /// <param name="log">the battle log</param>
+        /// <returns></returns>
 
         private async Task ReportLogToPlayer(TcpClient client, List<string> log)
         {

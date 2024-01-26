@@ -12,6 +12,11 @@ namespace MTCG.Repositories
             _connectionFactory = connectionFactory;
         }
 
+
+        /// <summary>
+        /// drops all the tables and their content, managed by the application settings 
+        /// </summary>
+        /// <param name="tableNames"></param>
         public void DropTables(List<string> tableNames)
         {
             using (var connection = _connectionFactory.CreateConnection())
@@ -34,6 +39,10 @@ namespace MTCG.Repositories
                 }
             }
         }
+
+        /// <summary>
+        /// created all tables if they dont exist already
+        /// </summary>
 
         public void CreateTables()
         {

@@ -17,7 +17,12 @@ namespace MTCG.Services
         private readonly bool _shouldResetTables;
         private readonly List<string>? _tableNames;
 
-
+        /// <summary>
+        /// gets the tables in the app settings to delete
+        /// </summary>
+        /// <param name="configuration"></param>
+        /// <param name="databaseHelperRepository"></param>
+        /// <exception cref="Exception"></exception>
         public DatabaseHelperService(IConfiguration configuration, IDatabaseHelperRepository databaseHelperRepository)
         {
             _configuration = configuration;
@@ -36,6 +41,10 @@ namespace MTCG.Services
 
         }
 
+
+        /// <summary>
+        ///  initializes tables for database
+        /// </summary>
         public void InitializeDatabase()
         {
             

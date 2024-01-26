@@ -23,6 +23,12 @@ namespace MTCG.Services
             _sessionService = (SessionService?)sessionService ?? throw new ArgumentNullException(nameof(sessionService));
         }
 
+        /// <summary>
+        /// hashes the password with salt and iterations
+        /// </summary>
+        /// <param name="password"></param>
+        /// <returns>string </returns>
+
         internal static string HashPassword(string password)
         {
             using (var algorithm = new Rfc2898DeriveBytes(
@@ -37,6 +43,12 @@ namespace MTCG.Services
                 return $"{Iterations}.{salt}.{key}";
             }
         }
+        /// <summary>
+        /// creates a password hash and saves it with the username 
+        /// </summary>
+        /// <param name="username"></param>
+        /// <param name="password"></param>
+        /// <returns></returns>
 
 
         public bool CreateUser(string username, string password)
@@ -47,10 +59,15 @@ namespace MTCG.Services
             UserCredentials userCredentials = new() { Username = username, Password = hashedPassword };
 
             return _userRepository != null && _userRepository.registerUser(userCredentials);
-           
-
 
         }
+
+        /// <summary>
+        /// auth and update user data with provided data
+        /// </summary>
+        /// <param name="e"></param>
+        /// <returns>true if success</returns>
+        /// <exception cref="UnauthorizedException">invalid token</exception>
 
         public bool UpdateUserData(HttpSvrEventArgs e)
         {
@@ -80,7 +97,12 @@ namespace MTCG.Services
 
         }
 
-
+        /// <summary>
+        /// auth and gets the user data
+        /// </summary>
+        /// <param name="e"></param>
+        /// <returns></returns>
+        /// <exception cref="BadRequestException">no username provided</exception>
         public UserData? GetUserData(HttpSvrEventArgs e)
         {
             string? usernameClaim = e.Path.Replace("/users/", "");

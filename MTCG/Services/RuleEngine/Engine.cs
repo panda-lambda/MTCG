@@ -4,6 +4,10 @@ namespace MTCG.Services.RuleEngine
 {
     public class Engine
     {
+
+        /// <summary>
+        /// is the engine that evaluates the rules
+        /// </summary>
         private readonly List<IRule> _rules = new()
         {
            // new EffectiveVsIneffectiveReversed(),

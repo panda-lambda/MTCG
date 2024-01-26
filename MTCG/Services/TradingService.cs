@@ -20,6 +20,15 @@ namespace MTCG.Services
 
         }
 
+
+        /// <summary>
+        /// auth and creates a new trading deal 
+        /// </summary>
+        /// <param name="e"></param>
+        /// <returns></returns>
+        /// <exception cref="UnauthorizedException">invalid token</exception>
+        /// <exception cref="Exception"></exception>
+        /// <exception cref="ConflictException">deal already exists</exception>
         public bool CreateNewTradingDeal(HttpSvrEventArgs e)
         {
             Guid userId = _sessionService.AuthenticateUserAndSession(e, null);
@@ -40,6 +49,16 @@ namespace MTCG.Services
             return _packageAndCardRepository.CreateNewTradingDeal(tradingDeal);
         }
 
+
+        /// <summary>
+        /// auth + take on a offer 
+        /// </summary>
+        /// <param name="e"></param>
+        /// <returns>true if success</returns>
+        /// <exception cref="UnauthorizedException">invalid token</exception>
+        /// <exception cref="NotFoundException">trade deal not found</exception>
+        /// <exception cref="ForbiddenException">user not owner/self trade </exception>
+        /// <exception cref="Exception"></exception>
         public bool TradeSingleCard(HttpSvrEventArgs e)
         {
             Guid userId = _sessionService.AuthenticateUserAndSession(e, null);
@@ -92,6 +111,14 @@ namespace MTCG.Services
             return false;
         }
 
+
+        /// <summary>
+        /// auth and deletes a trading deal
+        /// </summary>
+        /// <param name="e"></param>
+        /// <returns>true if success</returns>
+        /// <exception cref="NotFoundException">tradeing deal not found</exception>
+        /// <exception cref="ForbiddenException">user not owner</exception>
         public bool RemoveTradingDeal(HttpSvrEventArgs e)
         {
             Guid userId = _sessionService.AuthenticateUserAndSession(e, null);
@@ -107,7 +134,7 @@ namespace MTCG.Services
             }
             else
             {
-                throw new ForbiddenException("The provided deal ID was not found.");
+                throw new ForbiddenException("Not the owner of the deal.");
             }
 
         }

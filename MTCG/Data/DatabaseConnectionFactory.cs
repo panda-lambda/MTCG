@@ -7,6 +7,9 @@ namespace MTCG.Data
 {
     public class DatabaseConnectionFactory : IDatabaseConnectionFactory
     {
+        /// <summary>
+        /// Create a connection to the database
+        /// </summary>
         private readonly string? _connectionString;
 
         public DatabaseConnectionFactory(IConfiguration configuration)

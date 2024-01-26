@@ -29,6 +29,12 @@ namespace MTCG.Services
 
         }
 
+
+        /// <summary>
+        /// auth & buys a package
+        /// </summary>
+        /// <param name="e"></param>
+        /// <returns>list of bought cards</returns>
         public List<Card>? BuyPackage(HttpSvrEventArgs e)
         {
 
@@ -43,6 +49,11 @@ namespace MTCG.Services
 
         }
 
+        /// <summary>
+        /// auth and gets the deck of a user
+        /// </summary>
+        /// <param name="e"></param>
+        /// <returns></returns>
         public Deck GetDeckByUser(HttpSvrEventArgs e)
         {
             Guid userId = _sessionService.AuthenticateUserAndSession(e, null);
@@ -50,6 +61,14 @@ namespace MTCG.Services
             return _packageAndCardRepository.GetDeckByUser(userId);
         }
 
+
+        /// <summary>
+        /// auth  and parses the payload to a list of guids, then tries to sell them and updates coins
+        /// </summary>
+        /// <param name="e"></param>
+        /// <returns></returns>
+        /// <exception cref="BadRequestException">could not parse payload</exception>
+        /// <exception cref="ConflictException">error after selling</exception>
         public int SellCards(HttpSvrEventArgs e)
         {
             Guid userId = _sessionService.AuthenticateUserAndSession(e, null);
@@ -87,11 +106,12 @@ namespace MTCG.Services
             {
                 throw new ConflictException("Something went wrong, please contact the support team.");
             }
-
-
-
-
         }
+        /// <summary>
+        /// auth and gets the cards of a user
+        /// </summary>
+        /// <param name="e"></param>
+        /// <returns>list of his/her cards</returns>
 
         public List<Card>? GetCardsByUser(HttpSvrEventArgs e)
         {
@@ -99,6 +119,15 @@ namespace MTCG.Services
             return _packageAndCardRepository.GetCardsByUser((Guid)userId);
         }
 
+
+        /// <summary>
+        /// auth, parses the payload and checks if the user is owner of the provided cards
+        /// then updates the deck with the cards
+        /// </summary>
+        /// <param name="e"></param>
+        /// <returns></returns>
+        /// <exception cref="InvalidCardCountInDeck">deck has not the required card count</exception>
+        /// <exception cref="UserNotCardOwnerException">user does not own all provided cards</exception>
         public bool ConfigureDeckForUser(HttpSvrEventArgs e)
         {
             //try
@@ -136,11 +165,13 @@ namespace MTCG.Services
             }
             return _packageAndCardRepository.ConfigureDeckForUser(cardIds, userId);
 
-
-
-
         }
 
+        /// <summary>
+        /// check if the deck is valid (4 cards)
+        /// </summary>
+        /// <param name="userId"></param>
+        /// <returns></returns>
         public bool CheckForValidDeck(Guid userId)
         {
             Deck? deck = _packageAndCardRepository.GetDeckByUser(userId);
@@ -156,7 +187,14 @@ namespace MTCG.Services
         }
 
 
-
+        /// <summary>
+        /// auth for admin and parses payload, ínserts cards and  package
+        /// </summary>
+        /// <param name="e"></param>
+        /// <returns></returns>
+        /// <exception cref="ForbiddenException"></exception>
+        /// <exception cref="BadRequestException"></exception>
+        /// <exception cref="Exception"></exception>
         public bool CreateNewPackage(HttpSvrEventArgs e)
         {
 

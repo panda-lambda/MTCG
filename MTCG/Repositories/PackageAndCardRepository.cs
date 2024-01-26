@@ -15,6 +15,14 @@ namespace MTCG.Repositories
             _connectionFactory = connectionFactory;
         }
 
+
+        /// <summary>
+        /// gets the card that is offered in a trading deal
+        /// </summary>
+        /// <param name="tradeId">the trade guid</param>
+        /// <returns></returns>
+        /// <exception cref="NotFoundException">deal id was not found</exception>
+        /// <exception cref="InternalServerErrorException">something went wrong</exception>
         public Guid? GetCardToTradeFromTradingDeal(Guid tradeId)
         {
             using var connection = _connectionFactory.CreateConnection();
@@ -42,6 +50,15 @@ namespace MTCG.Repositories
                 }
             }
         }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="cardId">guid of the card</param>
+        /// <param name="userId">guid of the supposed owner</param>
+        /// <returns></returns>
+        /// <exception cref="ForbiddenException">not owner of the card</exception>
+        /// <exception cref="ConflictException">card is locked, so its already in a deal</exception>
 
         public bool CheckCardForTradingDeal(Guid cardId, Guid userId)
         {
@@ -106,7 +123,11 @@ namespace MTCG.Repositories
 
 
         }
-
+        /// <summary>
+        /// //checks if a trading deal with this id exists
+        /// </summary>
+        /// <param name="tradingId">trading id</param>
+        /// <returns>the guid if existent</returns>
 
         public Guid? GetTradingDealsByTradingId(Guid tradingId)
         {
@@ -133,6 +154,13 @@ namespace MTCG.Repositories
 
 
         }
+
+        /// <summary>
+        /// gets a single card with some attributes
+        /// </summary>
+        /// <param name="cardId">guid of the card</param>
+        /// <returns>card with most attributes (dmg, type, locked, name, id)</returns>
+        /// <exception cref="InternalServerErrorException">something went wrong</exception>
 
         public Card? GetSingleCard(Guid cardId)
         {
@@ -199,6 +227,16 @@ namespace MTCG.Repositories
             }
         }
 
+
+        /// <summary>
+        /// Trades single card, ->swaps user
+        /// </summary>
+        /// <param name="userIdOffering">user who created the deal</param>
+        /// <param name="userIdBuying">user who is buying</param>
+        /// <param name="cardToSell">card id who is offered</param>
+        /// <param name="cardBuying">card id which is buying</param>
+        /// <returns></returns>
+        /// <exception cref="Exception">something went wrong</exception>
         public bool TradeSingleCard(Guid userIdOffering, Guid userIdBuying, Guid cardToSell, Guid cardBuying)
         {
             Console.WriteLine($"{userIdBuying} gets {cardToSell} and {userIdOffering} gets {cardBuying}");
@@ -295,6 +333,16 @@ namespace MTCG.Repositories
 
             }
         }
+
+        /// <summary>
+        /// deletes a trading del
+        /// </summary>
+        /// <param name="tradeId">the guid of the deal</param>
+        /// <param name="userId">the owner of the deal</param>
+        /// <returns>true if success</returns>
+        /// <exception cref="NotFoundException">deal not found</exception>
+        /// <exception cref="ForbiddenException">owner not owner</exception>
+        /// <exception cref="Exception"></exception>
         public bool DeleteTradingDeal(Guid tradeId, Guid userId)
         {
             int rowsAffected = 0;
@@ -374,6 +422,13 @@ namespace MTCG.Repositories
             }
         }
 
+
+        /// <summary>
+        /// get all the availabe trading deals
+        /// </summary>
+        /// <returns>list of trading deals</returns>
+        /// <exception cref="NoContentException">no trading deals</exception>
+        /// <exception cref="InternalServerErrorException"></exception>
         public List<TradingDeal> GetAllTradingDeals()
         {
             using var connection = _connectionFactory.CreateConnection();
@@ -429,6 +484,13 @@ namespace MTCG.Repositories
             }
         }
 
+
+        /// <summary>
+        /// creates a new trading deal
+        /// </summary>
+        /// <param name="tradingDeal">trading deal model</param>
+        /// <returns>true if success</returns>
+        /// <exception cref="Exception"></exception>
         public bool CreateNewTradingDeal(TradingDeal tradingDeal)
         {
 
@@ -492,7 +554,13 @@ namespace MTCG.Repositories
             }
         }
 
-
+        /// <summary>
+        /// gets deck by user id
+        /// </summary>
+        /// <param name="userId">guid of user</param>
+        /// <returns> the deck of the user</returns>
+        /// <exception cref="InternalServerErrorException"></exception>
+        /// <exception cref="NoContentException">user has no cards in the deck</exception>
         public Deck GetDeckByUser(Guid userId)
         {
             using var connection = _connectionFactory.CreateConnection();
@@ -586,7 +654,12 @@ namespace MTCG.Repositories
         }
 
 
-
+        /// <summary>
+        /// updates the deck of a user after a battle
+        /// </summary>
+        /// <param name="userId">guid of user</param>
+        /// <param name="deck">deck after the battle</param>
+        /// <exception cref="Exception"></exception>
         public void UpdateCardsById(Guid userId, Deck deck)
         {
             using var connection = _connectionFactory.CreateConnection();
@@ -676,7 +749,13 @@ namespace MTCG.Repositories
             }
         }
 
-
+        /// <summary>
+        /// changes ownership to null for sold cards
+        /// </summary>
+        /// <param name="cardIds">List of cards ids</param>
+        /// <param name="userId">owner id </param>
+        /// <returns>count of sold cards</returns>
+        /// <exception cref="Exception"></exception>
         public int SellCards(List<Guid> cardIds, Guid userId)
         {
             int affectedRows = 0;
@@ -761,6 +840,16 @@ namespace MTCG.Repositories
                 return affectedRows;
             }
         }
+
+
+
+
+        /// <summary>
+        /// gets all the cards of a user
+        /// </summary>
+        /// <param name="userId">owner</param>
+        /// <returns>List of cards</returns>
+        /// <exception cref="InternalServerErrorException"></exception>
         public List<Card>? GetCardsByUser(Guid userId)
         {
             Console.WriteLine(" in getcardsbyuser repo");
@@ -813,6 +902,11 @@ namespace MTCG.Repositories
 
         }
 
+        /// <summary>
+        /// get all cards
+        /// </summary>
+        /// <returns>list of all card ids</returns>
+
         public List<Card> GetAllCards()
         {
             using var connection = _connectionFactory.CreateConnection();
@@ -836,7 +930,11 @@ namespace MTCG.Repositories
         }
 
 
-
+        /// <summary>
+        /// add cards into cards and package to buy
+        /// </summary>
+        /// <param name="package"> package consisting of 5 cards</param>
+        /// <returns>true if success</returns>
 
         public bool AddPackage(Package package)
         {
@@ -959,7 +1057,14 @@ namespace MTCG.Repositories
         }
 
 
-
+        /// <summary>
+        /// buys a package, changes ownership of cards, removes the package and removes 5 coins from user
+        /// </summary>
+        /// <param name="userId">user </param>
+        /// <returns></returns>
+        /// <exception cref="ForbiddenException">not enough money</exception>
+        /// <exception cref="NotFoundException">no package available</exception>
+        /// <exception cref="InternalServerErrorException"></exception>
 
         public List<Card>? BuyPackage(Guid userId)
         {
@@ -1136,6 +1241,15 @@ namespace MTCG.Repositories
                 }
             }
         }
+
+
+        /// <summary>
+        /// configure the deck of a user
+        /// </summary>
+        /// <param name="cardList">list of cards</param>
+        /// <param name="user">owner id</param>
+        /// <returns>true if success</returns>
+        /// <exception cref="Exception"></exception>
 
         public bool ConfigureDeckForUser(List<Guid> cardList, Guid user)
         {

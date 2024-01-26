@@ -45,6 +45,16 @@ namespace MTCG.Services
             }
 
         }
+
+        /// <summary>
+        /// main authenticate method, checks if token is valid and if user is in session
+        /// </summary>
+        /// <param name="e"></param>
+        /// <param name="username">username claim if provided</param>
+        /// <returns></returns>
+        /// <exception cref="UnauthorizedException">invalid token</exception>
+        /// <exception cref="ForbiddenException">user needs to be admin</exception>
+        /// <exception cref="UserCurrentlyFightingException">user is currently in a fight and locked </exception>
         public Guid AuthenticateUserAndSession(HttpSvrEventArgs e, string? username)
         {
 
@@ -83,6 +93,15 @@ namespace MTCG.Services
 
         }
 
+        /// <summary>
+        /// authenticates user and creates a new session -loggin in 
+        /// </summary>
+        /// <param name="userCredentials"> provided passsword and username</param>
+        /// <param name="client">tcp client</param>
+        /// <returns></returns>
+        /// <exception cref="NotFoundException">no user with that name</exception>
+        /// <exception cref="UnauthorizedException">invalid token</exception>
+
         public string AuthenticateAndCreateSession(UserCredentials userCredentials, TcpClient client)
         {
                 
@@ -106,7 +125,13 @@ namespace MTCG.Services
             return res;
         }
 
-
+        /// <summary>
+        /// creates a new sessions in sesseino dict with user id as key
+        /// </summary>
+        /// <param name="userId"></param>
+        /// <param name="username"></param>
+        /// <param name="client"></param>
+        /// <returns></returns>
         internal string CreateSession(Guid userId, string username, TcpClient client)
         {
             Guid sessionId = Guid.NewGuid();
@@ -121,6 +146,13 @@ namespace MTCG.Services
             return session.Token;
 
         }
+
+        /// <summary>
+        /// checks if the password is correct
+        /// </summary>
+        /// <param name="inputPassword">input by user</param>
+        /// <param name="hash">stored hash with salt and iterations</param>
+        /// <returns>true if correct</returns>
         private static bool VerifyPassword(string inputPassword, string hash)
         {
             //try
@@ -143,6 +175,12 @@ namespace MTCG.Services
                 return inputKey == originalKey;
             }
         }
+
+        /// <summary>
+        /// validates the jwt token
+        /// </summary>
+        /// <param name="token">jwt token</param>
+        /// <returns>guid of user or null</returns>
 
         private Guid? ValidateToken(string token)
 
@@ -201,6 +239,12 @@ namespace MTCG.Services
             }
         }
 
+
+        /// <summary>
+        /// gets the guid of an expired token to 
+        /// </summary>
+        /// <param name="token"></param>
+        /// <returns></returns>
         public Guid? GetGuidFromExpiredToken(string token)
         {
             var tokenHandler = new JwtSecurityTokenHandler();
@@ -233,7 +277,12 @@ namespace MTCG.Services
             }
         }
 
-
+        /// <summary>
+        /// generates a new jtw token with 30 min time expiration
+        /// </summary>
+        /// <param name="id">user id claim</param>
+        /// <param name="userName">username for claim</param>
+        /// <returns>token string</returns>
         private string GenerateJwtToken(Guid id, string userName)
         {
 

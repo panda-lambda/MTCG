@@ -17,16 +17,30 @@ namespace MTCG.Controller
 {
     public class SessionController : BaseController
     {
+        /// <summary>
+        /// Controls the session service and handles the login.
+        /// </summary>
         private ISessionService _sessionService;
         public SessionController(ISessionService sessionService)
         {
             _sessionService = sessionService ?? throw new ArgumentNullException(nameof(sessionService));
         }
 
+        /// <summary>
+        /// Handles the request and calls the appropriate method.
+        /// </summary>
+        /// <param name="e">HttpSvrEvenArgs</param>
+
         public override void HandleRequest(HttpSvrEventArgs e)
         {
             ExecuteWithExceptionHandling(e, AuthenticateAndCreateSession);
         }
+
+
+        /// <summary>
+        /// Authenticates a client and creates a session with userid as key. 
+        /// </summary>
+        /// <param name="e"></param>
 
         public void AuthenticateAndCreateSession(HttpSvrEventArgs e)
         {
@@ -54,10 +68,6 @@ namespace MTCG.Controller
                     {
                         e.Reply((int)HttpCodes.UNAUTORIZED, "{\"description\":\"Access token is missing or invalid\"}");
                     }
-
-
-                
-                    
                 }
                 catch (Exception ex)
                 {

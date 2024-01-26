@@ -9,7 +9,12 @@ namespace MTCG.Models
 {
     public  class RoundResult
     {
-        public  ResultType? Result { get; set;  }
+        /// <summary>This class provides the model for a battle round result.</summary>
+
+        //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        // public properties                                                                                                //
+        //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        public ResultType? Result { get; set;  }
         public string? LogRoundPlayerOne { get; set; }
         public string? LogRoundPlayerTwo { get; set; }
 

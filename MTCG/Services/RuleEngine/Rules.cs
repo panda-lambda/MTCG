@@ -2,10 +2,13 @@
 
 namespace MTCG.Services.RuleEngine
 {
-
+    /// <summary>
+    /// classes with rules 
+    /// </summary>
 
     public class EffectiveVsIneffective : IRule
     {
+
         public int Priority { get; } = 5;
         public bool Applies(Card cardOne, Card cardTwo)
         {

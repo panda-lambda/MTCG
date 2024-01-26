@@ -13,6 +13,9 @@ namespace MTCG.Controller
 {
     public class UserController : BaseController
     {
+        /// <summary>
+        /// Controls everything related to users and handles related requests.
+        /// </summary>
         private IUserService _userService;
 
         public UserController(IUserService userService)
@@ -20,6 +23,10 @@ namespace MTCG.Controller
             _userService = userService ?? throw new ArgumentNullException(nameof(userService));
         }
 
+        /// <summary>
+        /// Handles the request and calls the appropriate method.
+        /// </summary>
+        /// <param name="e">HttpSvrEvenArgs</param>
 
         public override void HandleRequest(HttpSvrEventArgs e)
         {
@@ -48,7 +55,10 @@ namespace MTCG.Controller
         }
 
 
-
+        /// <summary>
+        /// Creates a single user and adds his/her id to the database.
+        /// </summary>
+        /// <param name="e">HTTPServerEventArgs</param>
         internal void CreateUser(HttpSvrEventArgs e)
         {
             Console.WriteLine("in create use usercontroller");
@@ -71,6 +81,11 @@ namespace MTCG.Controller
     
         }
 
+        /// <summary>
+        /// Get user data for a single user.
+        /// </summary>
+        /// <param name="e"></param>
+        /// <exception cref="NotFoundException">if the user is not found in the database</exception>
         internal void GetUserData(HttpSvrEventArgs e)
         {
 
@@ -83,7 +98,10 @@ namespace MTCG.Controller
             e.Reply((int)HttpCodes.OK, System.Text.Json.JsonSerializer.Serialize(userData,JsonOptions.NullOptions));
         }
 
-
+        /// <summary>
+        /// updates the table userdata with the provided data.
+        /// </summary>
+        /// <param name="e"></param>
         internal void UpdateUserData(HttpSvrEventArgs e)
         {
 

@@ -13,6 +13,9 @@ namespace MTCG.Controller
 {
     public class TradingController : BaseController
     {
+        /// <summary>
+        /// Controls the trades and handles related requests.
+        /// </summary>
         private ITradingService _tradingService;
 
         public TradingController(ITradingService tradingService)
@@ -20,6 +23,10 @@ namespace MTCG.Controller
             _tradingService = tradingService ?? throw new ArgumentNullException(nameof(tradingService));
         }
 
+        /// <summary>
+        /// Handles the request and calls the appropriate method.
+        /// </summary>
+        /// <param name="e">HttpSvrEvenArgs</param>
 
         public override void HandleRequest(HttpSvrEventArgs e)
         {
@@ -60,6 +67,11 @@ namespace MTCG.Controller
             }
         }
 
+        /// <summary>
+        /// Trades a single card for another card offered in a trading deal. 
+        /// </summary>
+        /// <param name="e"></param>
+        /// <exception cref="Exception">something went wrong</exception>
         internal void TradeSingleCard(HttpSvrEventArgs e)
         {
             if (_tradingService.TradeSingleCard(e))
@@ -70,11 +82,22 @@ namespace MTCG.Controller
             }
 
         }
+        /// <summary>
+        /// createds a new trading deal.
+        /// </summary>
+        /// <param name="e"></param>
+
         internal void CreateNewTrading(HttpSvrEventArgs e)
         {
             if (_tradingService.CreateNewTradingDeal(e))
                 e.Reply((int)HttpCodes.OK, "{\"description\":\"Trading deal successfully created\"}");
         }
+
+        /// <summary>
+        /// removes a trading deal
+        /// </summary>
+        /// <param name="e"></param>
+        /// <exception cref="ForbiddenException">the user is not owner</exception>
         internal void RemoveTradingDeal(HttpSvrEventArgs e)
         {
             if (_tradingService.RemoveTradingDeal(e))
@@ -87,6 +110,12 @@ namespace MTCG.Controller
             }
         }
 
+
+        /// <summary>
+        /// gets all the availabe trading deals
+        /// </summary>
+        /// <param name="e"></param>
+        /// <exception cref="NoContentException">there are no trading deals</exception>
         internal void GetAvailabeTradingDeals(HttpSvrEventArgs e)
         {
             List<TradingDeal> deals = _tradingService.GetTradingDeals(e);
